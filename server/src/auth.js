@@ -12,9 +12,11 @@ export async function hashPassword(password) {
   return `scrypt$${salt.toString("hex")}$${hash.toString("hex")}`;
 }
 
-async function checkPassword(password, stored) {
-  const [kind, saltHex, hashHex] = String(stored).split("$");
-  if (kind !== "scrypt") return false;
+export async function checkPassword(password, stored) {
+  const parts = String(stored).split("$");
+  // Anything that is not exactly salt + hash fails closed. (An empty or damaged hash used to decode to nothing and match anything.)
+  if (parts.length !== 3 || parts[0] !== "scrypt" || !/^[0-9a-f]{32}$/.test(parts[1]) || !/^[0-9a-f]{128}$/.test(parts[2])) return false;
+  const [, saltHex, hashHex] = parts;
   const want = Buffer.from(hashHex, "hex");
   const got = await scryptAsync(password, Buffer.from(saltHex, "hex"), want.length);
   return timingSafeEqual(got, want);

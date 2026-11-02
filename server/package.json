@@ -4,11 +4,12 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.9"
   },
   "scripts": {
     "start": "node --env-file=.env src/index.js",
     "start:prod": "node src/index.js",
+    "test": "node --test --test-concurrency=1 --env-file-if-exists=.env \"test/**/*.test.js\"",
     "setup": "node --env-file=.env src/setup.js",
     "import": "node --env-file=.env src/import.js",
     "create-user": "node --env-file=.env src/createuser.js",

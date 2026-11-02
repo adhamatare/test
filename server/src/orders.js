@@ -13,7 +13,7 @@ export class OrderError extends Error {}
 const fail = msg => { throw new OrderError(msg); };
 
 // Same rules as openStatus() in menu.html, so a customer can't bypass them by calling the API directly.
-function isOpen(settings, now = new Date()) {
+export function isOpen(settings, now = new Date()) {
   if (settings.pauseOrders) return false;
   if (!settings.useHours || !settings.hours) return true;
   let day, mins;
@@ -59,8 +59,8 @@ export async function priceOrder(body) {
   const seen = new Set();
   for (const raw of body.items) {
     const ref = String(raw?.id ?? "");
-    const qty = Number(raw?.qty);
-    if (!Number.isInteger(qty) || qty < 1 || qty > 50) fail("Invalid quantity");
+    const qty = raw?.qty;
+    if (!Number.isInteger(qty) || qty < 1 || qty > 50) fail("Invalid quantity");   // a real number, not text like "2"
     if (seen.has(ref)) fail("The same item appears twice");
     seen.add(ref);
     const note = text(raw.note, 200);
@@ -94,7 +94,8 @@ export async function priceOrder(body) {
     const areas = s.deliveryAreas || [];
     let fee;
     if (areas.length) {
-      const a = areas[Number(body.area)];
+      // An empty value must not turn into 0 (the first area) the way Number("") does.
+      const a = body.area === "" || body.area == null ? undefined : areas[Number(body.area)];
       if (!a) fail("Please select your delivery area");
       order.area = a.en;
       fee = Number(a.fee) || 0;
