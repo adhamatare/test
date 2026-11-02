@@ -13,6 +13,14 @@
   .qr { display: inline-block; padding: 8px; background: #fff; }
   button { margin-top: 8px; padding: 8px 16px; cursor: pointer; }
   .note { color: #7a6a58; font-size: 14px; }
+  .tables .card { width: 200px; }
+  .tables .card h3 { margin: 0 0 8px; font-size: 22px; }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .noprint, body > h1, body > p, body > label, body > input, .tables .card button { display: none !important; }
+    .tables { margin: 0; gap: 16px; }
+    .tables .card { break-inside: avoid; border: 1px solid #ccc; }
+  }
 </style>
 </head>
 <body>
@@ -24,9 +32,19 @@
 <label for="tableNo">Table number (optional, prints a table-specific QR)</label>
 <input id="tableNo" placeholder="e.g. 5" inputmode="numeric">
 
-<div class="cards">
+<div class="cards noprint">
   <div class="card"><h3>Restaurant + Coffee Shop</h3><div class="qr" id="qr-menu"></div><br><button data-id="menu">Download PNG</button></div>
 </div>
+
+<div class="noprint">
+  <h2>Table QR codes</h2>
+  <p class="note">One code per table. Scanning opens the menu with <b>Dine in</b> and the table number already filled in.</p>
+  <label for="tableCount">How many tables?</label>
+  <input id="tableCount" type="number" min="1" max="200" placeholder="e.g. 10">
+  <button id="makeTables">Create table codes</button>
+  <button id="printTables" hidden>Print / Save as PDF</button>
+</div>
+<div class="cards tables" id="tables"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
@@ -60,6 +78,38 @@ document.querySelectorAll("button[data-id]").forEach(b => b.onclick = () => {
   a.click();
 });
 render();
+
+// ---- One QR per table ----
+function makeTables() {
+  const n = Math.min(200, Math.max(0, parseInt(document.getElementById("tableCount").value, 10) || 0));
+  const box = document.getElementById("tables");
+  box.innerHTML = "";
+  let u;
+  try { u = new URL(base.value.split("#")[0]); } catch { return; }
+  for (let i = 1; i <= n; i++) {
+    u.searchParams.set("table", i);
+    const card = document.createElement("div");
+    card.className = "card";
+    const h = document.createElement("h3");
+    h.textContent = "Table " + i;
+    const qr = document.createElement("div");
+    qr.className = "qr";
+    new QRCode(qr, { text: u.href, width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
+    const dl = document.createElement("button");
+    dl.textContent = "Download PNG";
+    dl.onclick = () => {
+      const a = document.createElement("a");
+      a.href = qr.querySelector("canvas").toDataURL("image/png");
+      a.download = "menu-qr-table-" + i + ".png";
+      a.click();
+    };
+    card.append(h, qr, document.createElement("br"), dl);
+    box.appendChild(card);
+  }
+  document.getElementById("printTables").hidden = n === 0;
+}
+document.getElementById("makeTables").onclick = makeTables;
+document.getElementById("printTables").onclick = () => window.print();
 </script>
 </body>
 </html>

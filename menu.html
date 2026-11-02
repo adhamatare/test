@@ -21,6 +21,8 @@
   .info { flex: 1; }
   .info small { display: block; color: #7a6a58; }
   .price { white-space: nowrap; font-weight: 600; }
+  .soldout .pic, .soldout .info { opacity: .45; }
+  .sold { padding: 4px 10px; border-radius: 8px; background: #e8dfd3; color: #7a6a58; font-size: 13px; font-weight: 600; }
   .was { display: block; color: #9a8a78; font-weight: 400; font-size: 13px; }
   .badge { display: inline-block; margin-inline-start: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #fff; vertical-align: middle; }
   .badge.new { background: #1fa855; }
@@ -65,8 +67,8 @@ let DELIVERY_FEE = 0;       // Added to the total for delivery orders.
 const OFFERS = "__offers";  // Virtual tab listing every discounted item.
 
 const UI = {
-  en: { title: "Our Menu", table: "Table", add: "Add", offers: "Special offers", new: "NEW", cart: "View order", order: "Your order", tableNo: "Table number", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", phone: "Phone number", address: "Delivery address", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", lang: "العربية" },
-  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", offers: "العروض", new: "جديد", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", phone: "رقم الهاتف", address: "عنوان التوصيل", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", lang: "English" }
+  en: { title: "Our Menu", table: "Table", add: "Add", offers: "Special offers", new: "NEW", soldOut: "Sold out", cart: "View order", order: "Your order", tableNo: "Table number", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", phone: "Phone number", address: "Delivery address", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", lang: "العربية" },
+  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", offers: "العروض", new: "جديد", soldOut: "نفدت الكمية", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", phone: "رقم الهاتف", address: "عنوان التوصيل", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", lang: "English" }
 };
 
 // Menu content comes from menu.json (edited through admin.html).
@@ -114,7 +116,7 @@ const finalPrice = it => Math.round(it.price * (100 - (it.discount || 0))) / 100
 function sectionsFor(key) {
   if (key !== OFFERS) return MENUS[key].sections;
   return Object.entries(MENUS)
-    .map(([k, m]) => ({ en: k, ar: m.ar, items: m.sections.flatMap(s => s.items).filter(it => it.discount > 0) }))
+    .map(([k, m]) => ({ en: k, ar: m.ar, items: m.sections.flatMap(s => s.items).filter(it => it.discount > 0 && !it.hidden) }))
     .filter(s => s.items.length);
 }
 
@@ -150,16 +152,18 @@ function render() {
   const menu = $("menu");
   menu.innerHTML = "";
   for (const sec of sectionsFor(tab)) {
+    const shown = sec.items.filter(it => !it.hidden);   // hidden items never reach customers
+    if (!shown.length) continue;
     const h = document.createElement("h2");
     h.textContent = sec[lang];
     menu.appendChild(h);
-    for (const it of sec.items) {
+    for (const it of shown) {
       const { id, en, ar, pic } = it;
       const price = finalPrice(it);
       const name = lang === "ar" ? ar : en;
       const desc = lang === "ar" ? it.dAr : it.dEn;
       const row = document.createElement("div");
-      row.className = "item";
+      row.className = "item" + (it.soldOut ? " soldout" : "");
       const info = document.createElement("div");
       info.className = "info";
       info.textContent = name;
@@ -174,7 +178,11 @@ function render() {
       p.appendChild(document.createTextNode(money(price)));
       buy.appendChild(p);
       const qty = cart[id] ? cart[id].qty : 0;
-      if (qty) {
+      if (it.soldOut) {
+        const so = document.createElement("div");
+        so.className = "sold"; so.textContent = t("soldOut");
+        buy.appendChild(so);
+      } else if (qty) {
         const q = document.createElement("div");
         q.className = "qty";
         const minus = document.createElement("button"); minus.textContent = "−"; minus.onclick = () => change(id, en, price, -1, ar);

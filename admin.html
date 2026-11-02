@@ -175,13 +175,16 @@ function itemCard(sec, it) {
   card.addEventListener("edited", refresh);
   const row = document.createElement("div");
   row.className = "row";
-  const chk = document.createElement("label");
-  chk.className = "check";
-  const box = document.createElement("input");
-  box.type = "checkbox"; box.checked = !!it.isNew;
-  box.onchange = () => { it.isNew = box.checked; dirty = true; say("Unsaved changes"); };
-  chk.append(box, "Mark as NEW");
-  row.append(chk, btn("Delete item", "danger", () => {
+  const flag = (label, key) => {
+    const chk = document.createElement("label");
+    chk.className = "check";
+    const box = document.createElement("input");
+    box.type = "checkbox"; box.checked = !!it[key];
+    box.onchange = () => { it[key] = box.checked; dirty = true; say("Unsaved changes"); };
+    chk.append(box, label);
+    return chk;
+  };
+  row.append(flag("Mark as NEW", "isNew"), flag("Sold out (shown greyed, can't be ordered)", "soldOut"), flag("Hide from menu", "hidden"), btn("Delete item", "danger", () => {
     if (!confirm(`Delete "${it.en || "this item"}"?`)) return;
     sec.items.splice(sec.items.indexOf(it), 1);
     dirty = true; say("Unsaved changes"); build();
