@@ -12,6 +12,7 @@
   #table { color: #6f5f4d; font-size: 14px; margin-top: 4px; }
   #banner { display: none; margin: 12px 16px 0; padding: 10px 14px; border-radius: 10px; background: #fdecea; color: #8e2a20; text-align: center; font-weight: 600; }
   #banner small { display: block; font-weight: 400; margin-top: 2px; }
+  #stale { display: none; margin: 12px 16px 0; padding: 10px 14px; border-radius: 10px; background: #fff4d6; color: #7a5a00; text-align: center; font-size: 14px; }
   #track { display: none; margin: 12px 16px 0; padding: 12px 14px; border-radius: 10px; background: #fff; border: 1px solid #c9bba8; }
   #track .tt { display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
   #track .x { border: 0; background: none; font-size: 20px; line-height: 1; cursor: pointer; color: #6f5f4d; padding: 0 4px; }
@@ -75,11 +76,13 @@
   <div id="table"></div>
 </header>
 <div id="banner"></div>
+<div id="stale"></div>
 <div id="track"></div>
 <nav id="tabs"></nav>
 <main id="menu"></main>
 <div id="bar"><span id="barCount"></span><span id="barTotal"></span></div>
 <div id="sheet"><div class="panel" id="panel"></div></div>
+<script src="config.js"></script>
 <script>
 // ---- Settings ----
 // Overwritten from menu.json "settings" (editable in admin.html).
@@ -92,11 +95,11 @@ const DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 const UI = {
   en: { title: "Our Menu", table: "Table", add: "Add", offers: "Special offers", combos: "Combo offers", save: "Save", youSave: "You save", unavailable: "Unavailable", includes: "Includes", new: "NEW", soldOut: "Sold out", cart: "View order", order: "Your order", tableNo: "Table number", name: "Your name", customer: "Customer", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", free: "Free", phone: "Phone number", address: "Delivery address", area: "Delivery area", pickArea: "Select your area", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", orderNo: "Order", lang: "العربية",
         closed: "We're closed right now", paused: "Online ordering is paused right now", todayHours: "Today's hours", closedToday: "Closed today", minOrder: "Minimum order for delivery is", badPhone: "Please enter a valid phone number", needArea: "Please select your delivery area",
-        confirmTitle: "Almost done!", confirmText: "WhatsApp opened with your order. Press Send in WhatsApp to place it. Your order is NOT placed until you send the message.", openAgain: "Open WhatsApp again", sent: "I sent it", back: "Back to my order", thanks: "Thank you! We received your order message.", keep: "Keep this order number", done: "Done", trackTitle: "Order status", hide: "Hide",
+        confirmTitle: "Almost done!", confirmText: "WhatsApp opened with your order. Press Send in WhatsApp to place it. Your order is NOT placed until you send the message.", openAgain: "Open WhatsApp again", sent: "I sent it", back: "Back to my order", thanks: "Thank you! We received your order message.", keep: "Keep this order number", done: "Done", trackTitle: "Order status", hide: "Hide", stale: "We could not reach the live menu, so prices and availability may be out of date. Your order still goes to us by WhatsApp.",
         st: { open: "Open", picked: "Picked", in_progress: "In progress", ready: { takeaway: "Ready for pickup", dinein: "Ready to serve", delivery: "Ready for delivery" }, cancelled: "Cancelled" } },
   ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", offers: "العروض", combos: "عروض الكومبو", save: "وفّر", youSave: "وفّرت", unavailable: "غير متوفر", includes: "يشمل", new: "جديد", soldOut: "نفدت الكمية", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", name: "اسمك", customer: "العميل", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", free: "مجاني", phone: "رقم الهاتف", address: "عنوان التوصيل", area: "منطقة التوصيل", pickArea: "اختر منطقتك", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", orderNo: "الطلب", lang: "English",
         closed: "نحن مغلقون الآن", paused: "الطلب عبر الإنترنت متوقف مؤقتًا", todayHours: "ساعات اليوم", closedToday: "مغلق اليوم", minOrder: "الحد الأدنى لطلب التوصيل", badPhone: "يرجى إدخال رقم هاتف صحيح", needArea: "يرجى اختيار منطقة التوصيل",
-        confirmTitle: "أوشكنا على الانتهاء!", confirmText: "فتح واتساب مع طلبك. اضغط إرسال في واتساب لتأكيد الطلب. لن يتم تسجيل طلبك حتى ترسل الرسالة.", openAgain: "افتح واتساب مرة أخرى", sent: "أرسلتها", back: "العودة إلى طلبي", thanks: "شكرًا لك! وصلتنا رسالة طلبك.", keep: "احتفظ برقم الطلب", done: "تم", trackTitle: "حالة الطلب", hide: "إخفاء",
+        confirmTitle: "أوشكنا على الانتهاء!", confirmText: "فتح واتساب مع طلبك. اضغط إرسال في واتساب لتأكيد الطلب. لن يتم تسجيل طلبك حتى ترسل الرسالة.", openAgain: "افتح واتساب مرة أخرى", sent: "أرسلتها", back: "العودة إلى طلبي", thanks: "شكرًا لك! وصلتنا رسالة طلبك.", keep: "احتفظ برقم الطلب", done: "تم", trackTitle: "حالة الطلب", hide: "إخفاء", stale: "تعذّر الوصول إلى القائمة المباشرة، لذا قد تكون الأسعار والتوفر غير محدّثة. سيصلنا طلبك عبر واتساب.",
         st: { open: "مفتوح", picked: "تم الاستلام", in_progress: "قيد التحضير", ready: { takeaway: "جاهز للاستلام", dinein: "جاهز للتقديم", delivery: "جاهز للتوصيل" }, cancelled: "ملغي" } }
 };
 
@@ -107,10 +110,10 @@ let BUNDLES = [];   // Combo offers: { id, en, ar, dEn, dAr, price, pic, isNew, 
 
 // ---- State ----
 const params = new URLSearchParams(location.search);
-// Optional backend. Empty = menu.json + WhatsApp only (how the live site works).
-// For testing, open menu.html?api=http://localhost:3000
-const API_URL = (params.get("api") || "").replace(/\/+$/, "");
+// The backend address comes from config.js (empty = menu.json + WhatsApp only). For testing, open menu.html?api=http://localhost:3000
+const API_URL = (params.get("api") || window.MENU_API || "").replace(/\/+$/, "");
 let sending = false, sendError = "";
+let staleMenu = false;   // true when the server could not be reached and the saved copy (menu.json) is shown instead
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch {} },
@@ -329,6 +332,8 @@ function render() {
   $("lang").textContent = t("lang");
   $("table").textContent = tableNo ? `${t("table")} ${tableNo}` : "";
   renderBanner();
+  $("stale").style.display = staleMenu ? "block" : "none";
+  $("stale").textContent = t("stale");
   renderTrack();
   const open = wasOpen;
 
@@ -712,11 +717,13 @@ $("sheet").onclick = e => { if (e.target === $("sheet")) $("sheet").style.displa
 async function init() {
   try {
     let data = null;
-    if (API_URL) {   // backend first; if it is asleep or down, fall back to menu.json
+    if (API_URL) {   // backend first; a sleeping free server can need up to ~30 seconds, so wait for it before falling back
+      $("menu").textContent = "...";
       try {
-        const r = await fetch(API_URL + "/api/menu", { cache: "no-store", signal: AbortSignal.timeout(8000) });
+        const r = await fetch(API_URL + "/api/menu", { cache: "no-store", signal: AbortSignal.timeout(30000) });
         if (r.ok) data = await r.json();
       } catch {}
+      if (!data) staleMenu = true;
     }
     if (!data) {
       const res = await fetch("menu.json?t=" + Date.now(), { cache: "no-store" });

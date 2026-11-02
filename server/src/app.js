@@ -31,6 +31,11 @@ export function createApp() {
   const app = express();
   // Behind the host's proxy, req.ip must be the visitor's address (used by the order limit and the login lockout).
   app.set("trust proxy", 1);
+  app.disable("x-powered-by");   // do not advertise the framework
+  app.use((_req, res, next) => {
+    res.set({ "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "X-Frame-Options": "DENY" });
+    next();
+  });
 
   // Only our own pages may call the API from a browser. ALLOWED_ORIGINS is a comma-separated list.
   const allowed = (process.env.ALLOWED_ORIGINS || "https://adhamatare.github.io,http://localhost:8765,http://localhost:3000")
@@ -42,6 +47,9 @@ export function createApp() {
 
   const limitOrders = limiter(10, "Too many orders, please wait a minute");
   const limitStatus = limiter(60, "Too many requests, please wait a moment");
+
+  // Light check that does not touch the database. A scheduled ping can use it to keep a sleeping host awake without waking the database.
+  app.get("/api/ping", (_req, res) => res.json({ ok: true }));
 
   app.get("/api/health", async (_req, res) => {
     try { await pool.query("SELECT 1"); res.json({ ok: true }); }
@@ -132,6 +140,8 @@ export function createApp() {
     const row = n && (await setStatus(n, status));
     row ? res.json(row) : res.status(404).json({ error: "No such order" });
   }));
+
+  app.use("/api", (_req, res) => res.status(404).json({ error: "Not found" }));
 
   app.use((err, _req, res, _next) => {
     const status = err.status >= 400 && err.status < 500 ? err.status : 500;

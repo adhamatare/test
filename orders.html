@@ -71,16 +71,17 @@
 
 <div id="detail" hidden><div id="dpanel" role="dialog" aria-modal="true"></div></div>
 
+<script src="config.js"></script>
 <script>
-// Address of the backend: ?api=... once, then remembered on this device.
+// Address of the backend: from config.js; for testing ?api=... overrides it (and is remembered on this device).
 const params = new URLSearchParams(location.search);
 const mem = {
   get(k, s) { try { return (s ? sessionStorage : localStorage).getItem(k); } catch { return null; } },
   set(k, v, s) { try { (s ? sessionStorage : localStorage).setItem(k, v); } catch {} },
   del(k, s) { try { (s ? sessionStorage : localStorage).removeItem(k); } catch {} }
 };
-if (params.get("api")) mem.set("ordersApi", params.get("api").replace(/\/+$/, ""));
-const API = mem.get("ordersApi") || "http://localhost:3000";
+if (params.get("api")) mem.set("apiUrl", params.get("api").replace(/\/+$/, ""));
+const API = (params.get("api") || window.MENU_API || mem.get("apiUrl") || "http://localhost:3000").replace(/\/+$/, "");
 
 const STATUS = [["open", "Open"], ["picked", "Picked"], ["in_progress", "In progress"], ["ready", "Ready for pickup"]];
 const NAMES = Object.fromEntries([...STATUS, ["cancelled", "Cancelled"]]);

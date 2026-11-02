@@ -67,6 +67,7 @@
 </main>
 <div id="bar" hidden><span class="msg" id="msg"></span><button id="logout" class="ghost">Log out</button><button id="save">Save changes</button></div>
 
+<script src="config.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const store = {
@@ -74,10 +75,11 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, v); } catch {} },
   del(k) { try { localStorage.removeItem(k); } catch {} }
 };
-// The menu now lives in the database behind the API. Address: ?api=... once, then remembered on this device.
+// The menu lives in the database behind the API. Its address comes from config.js; for testing, ?api=... overrides it
+// (and is remembered on this device for the next visit).
 const params = new URLSearchParams(location.search);
 if (params.get("api")) store.set("apiUrl", params.get("api").replace(/\/+$/, ""));
-const API = store.get("apiUrl") || "http://localhost:3000";
+const API = (params.get("api") || window.MENU_API || store.get("apiUrl") || "http://localhost:3000").replace(/\/+$/, "");
 const picUrl = p => (String(p).startsWith("/api/") ? API + p : p);   // photos uploaded through the API live on the server
 
 let token = "", version = 0, data = null, dirty = false;
