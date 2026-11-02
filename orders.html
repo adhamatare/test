@@ -33,6 +33,23 @@
   .steps button.cancel { color: #8e2a20; }
   .steps button:disabled { opacity: .6; cursor: wait; }
   .empty { text-align: center; color: #6f5f4d; margin: 40px 0; }
+  .top { cursor: pointer; }
+  .link { border: 0; background: none; color: #6b3f1d; text-decoration: underline; font-size: 14px; padding: 4px 0; cursor: pointer; }
+  #detail { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; justify-content: center; }
+  #detail[hidden] { display: none; }
+  #dpanel { background: #faf7f2; width: 100%; max-width: 560px; max-height: 92vh; overflow: auto; border-radius: 16px 16px 0 0; padding: 16px; box-sizing: border-box; }
+  #dpanel h2 { margin: 0 0 4px; }
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; color: #fff; background: #6f5f4d; vertical-align: middle; }
+  .chip.open { background: #c0392b; } .chip.picked { background: #d68910; } .chip.in_progress { background: #2e86c1; } .chip.ready { background: #1b8f49; } .chip.cancelled { background: #8e2a20; }
+  .kv { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px dotted #c9bba8; }
+  .kv span:first-child { color: #6f5f4d; }
+  .kv span:last-child { text-align: end; overflow-wrap: anywhere; }
+  .kv.total { font-weight: 800; font-size: 18px; border-bottom: 0; }
+  .kv.save span:last-child { color: #1b7a43; font-weight: 600; }
+  #dpanel h3 { margin: 14px 0 4px; font-size: 15px; }
+  .danger { width: 100%; padding: 12px; margin-top: 12px; border: 1px solid #c0392b; border-radius: 10px; background: #fff; color: #8e2a20; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .danger:disabled { opacity: .6; cursor: wait; }
+  .closebtn { width: 100%; padding: 12px; margin-top: 8px; border: 0; background: none; color: #6f5f4d; font-size: 15px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -52,6 +69,8 @@
   <p class="muted" id="stamp"></p>
 </main>
 
+<div id="detail" hidden><div id="dpanel" role="dialog" aria-modal="true"></div></div>
+
 <script>
 // Address of the backend: ?api=... once, then remembered on this device.
 const params = new URLSearchParams(location.search);
@@ -69,7 +88,7 @@ const TYPES = { dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery" };
 const FILTERS = [["active", "Active"], ["ready", "Ready"], ["cancelled", "Cancelled"], ["all", "All"]];
 
 let token = mem.get("ordersToken", true);   // kept only while this tab is open
-let filter = "active", orders = [], busy = new Set();
+let filter = "active", orders = [], busy = new Set(), openNo = null;
 const $ = id => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const money = n => Number(n).toFixed(2);
@@ -83,7 +102,7 @@ async function api(path, opts = {}) {
 }
 
 function signedOut(msg = "") {
-  token = null; mem.del("ordersToken", true);
+  token = null; mem.del("ordersToken", true); closeDetail();
   $("login").hidden = false; $("app").hidden = true; $("out").hidden = true;
   $("loginErr").textContent = msg;
 }
@@ -114,6 +133,7 @@ async function load() {
     orders = await api("/api/orders");
     $("stamp").textContent = "Updated " + new Date().toLocaleTimeString();
     render();
+    if (openNo != null) renderDetail();
   } catch (e) { if (e.message !== "signed out") $("stamp").textContent = "Cannot reach the server. Retrying..."; }
 }
 
@@ -138,6 +158,8 @@ function render() {
 function card(o) {
   const c = el("div", "card s-" + o.status);
   const top = el("div", "top");
+  top.title = "Show order details";
+  top.onclick = () => showDetail(o.number);
   top.append(el("span", "", `#${o.number} - ${o.customer}`), el("span", "", "$" + money(o.total)));
   const when = new Date(o.created_at);
   const where = o.type === "dinein" ? ` - table ${o.table_no}` : o.type === "delivery" ? ` - ${o.phone}` : "";
@@ -152,6 +174,9 @@ function card(o) {
   }
   c.appendChild(ul);
   if (o.note) c.append(el("div", "muted", "Note: " + o.note));
+  const more = el("button", "link", "View details");
+  more.onclick = () => showDetail(o.number);
+  c.appendChild(more);
   const steps = el("div", "steps");
   for (const [key, label] of [...STATUS.map(([k, l]) => [k, k === "ready" ? "Ready" : l]), ["cancelled", "Cancel"]]) {
     const b = el("button", (key === o.status ? "cur " : "") + (key === "cancelled" ? "cancel" : ""), label);
@@ -166,12 +191,70 @@ function card(o) {
 async function setStatus(o, status) {
   if (o.status === status) return;
   if (status === "cancelled" && !confirm(`Cancel order #${o.number}?`)) return;
-  busy.add(o.number); render();
+  busy.add(o.number); render(); if (openNo != null) renderDetail();
   try {
     await api(`/api/orders/${o.number}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
     o.status = status;
   } catch (e) { if (e.message !== "signed out") alert(e.message); }
-  busy.delete(o.number); render();
+  busy.delete(o.number); render(); if (openNo != null) renderDetail();
+}
+
+// ---- Order details ----
+const ago = d => { const m = Math.max(0, Math.round((Date.now() - new Date(d)) / 60000)); return m < 1 ? "just now" : m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${m % 60} min ago`; };
+
+function showDetail(number) { openNo = number; renderDetail(); }
+function closeDetail() { openNo = null; $("detail").hidden = true; }
+$("detail").onclick = e => { if (e.target === $("detail")) closeDetail(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDetail(); });
+
+function renderDetail() {
+  const o = orders.find(x => x.number === openNo);
+  const p = $("dpanel");
+  if (!o) return closeDetail();
+  $("detail").hidden = false;
+  p.innerHTML = "";
+  const h = el("h2", "", `Order #${o.number} `);
+  h.append(el("span", "chip " + o.status, NAMES[o.status]));
+  p.appendChild(h);
+  const kv = (k, v, cls = "") => { const r = el("div", "kv " + cls); r.append(el("span", "", k), el("span", "", v)); p.appendChild(r); };
+  kv("Placed", `${new Date(o.created_at).toLocaleString()} (${ago(o.created_at)})`);
+  kv("Type", TYPES[o.type]);
+  kv("Customer", o.customer);
+  if (o.table_no) kv("Table", o.table_no);
+  if (o.phone) kv("Phone", o.phone);
+  if (o.area) kv("Area", o.area);
+  if (o.address) kv("Address", o.address);
+  if (o.note) kv("Note", o.note);
+
+  p.appendChild(el("h3", "", "Items"));
+  for (const i of o.items) {
+    const r = el("div", "kv");
+    const left = el("span", "", `${i.qty} x ${i.name}`);
+    if (i.parts) left.append(el("small", "muted", i.parts));
+    if (i.note) left.append(el("small", "muted", "> " + i.note));
+    left.querySelectorAll("small").forEach(s => { s.style.display = "block"; });
+    r.append(left, el("span", "", `$${money(i.qty * i.unitPrice)}`));
+    p.appendChild(r);
+  }
+  kv("Subtotal", "$" + money(o.subtotal));
+  if (o.type === "delivery") kv("Delivery fee", Number(o.delivery_fee) ? "$" + money(o.delivery_fee) : "Free");
+  if (Number(o.savings) > 0) kv("Saved with combos", "$" + money(o.savings), "save");
+  kv("Total", "$" + money(o.total), "total");
+
+  if (o.status !== "cancelled") {
+    const cancel = el("button", "danger", "Cancel this order");
+    cancel.disabled = busy.has(o.number);
+    cancel.onclick = () => setStatus(o, "cancelled");
+    p.appendChild(cancel);
+  } else {
+    const back = el("button", "danger", "Restore order (set to Open)");
+    back.disabled = busy.has(o.number);
+    back.onclick = () => setStatus(o, "open");
+    p.appendChild(back);
+  }
+  const close = el("button", "closebtn", "Close");
+  close.onclick = closeDetail;
+  p.appendChild(close);
 }
 
 setInterval(load, 10000);
