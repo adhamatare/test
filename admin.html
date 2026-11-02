@@ -25,6 +25,9 @@
   .thumb { width: 64px; height: 64px; border-radius: 12px; background: #efe5d6; display: flex; align-items: center; justify-content: center; font-size: 34px; overflow: hidden; flex: none; }
   .thumb img { width: 100%; height: 100%; object-fit: cover; }
   .special { font-weight: 700; color: #c0392b; align-self: end; padding-bottom: 10px; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; padding: 8px 0; position: sticky; top: 0; z-index: 5; background: #faf7f2; }
+  .tabs button { background: #e8dfd3; color: #2b2118; border-radius: 999px; padding: 10px 18px; }
+  .tabs button.active { background: #6b3f1d; color: #fff; }
   .check { display: flex; align-items: center; gap: 6px; font-size: 15px; color: #2b2118; margin-top: 8px; }
   .hours-row { display: grid; grid-template-columns: 90px auto 1fr 1fr; gap: 8px; align-items: end; margin-top: 10px; }
   .area-row { display: grid; grid-template-columns: 1fr 1fr 90px auto; gap: 8px; align-items: end; margin: 10px 0; }
@@ -73,7 +76,8 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, v); } catch {} },
   del(k) { try { localStorage.removeItem(k); } catch {} }
 };
-let token = "", sha = "", data = null, dirty = false;   // the token only ever lives in memory; on disk it is locked with the password
+let token = "", sha = "", data = null, dirty = false;
+let adminTab = store.get("adminTab") || "settings";   // the tab you were on is remembered on this device   // the token only ever lives in memory; on disk it is locked with the password
 
 // Settings added after the first release; missing ones are filled in when the menu loads.
 const dayDefaults = () => Object.fromEntries(["mon", "tue", "wed", "thu", "fri", "sat", "sun"].map(d => [d, { closed: false, open: "09:00", close: "23:00" }]));
@@ -308,6 +312,28 @@ function build() {
   refreshSummary = updateSummary;
   app.append(summary);
 
+  // One tab per area: Settings & hours, Delivery, then each venue's menu.
+  const tabsDef = [["settings", "Settings & hours"], ["delivery", "Delivery"], ...data.venues.map(v => ["venue:" + v.key, v.key])];
+  if (!tabsDef.some(([id]) => id === adminTab)) adminTab = "settings";
+  const tabBar = document.createElement("div");
+  tabBar.className = "tabs";
+  const panels = {};
+  for (const [id, label] of tabsDef) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = label; b.className = id === adminTab ? "active" : "";
+    b.onclick = () => {
+      adminTab = id; store.set("adminTab", id);
+      for (const [pid, p] of Object.entries(panels)) p.hidden = pid !== id;
+      [...tabBar.children].forEach((x, i) => x.classList.toggle("active", tabsDef[i][0] === id));
+      window.scrollTo({ top: 0 });
+    };
+    tabBar.append(b);
+    const p = document.createElement("div");
+    p.hidden = id !== adminTab;
+    panels[id] = p;
+  }
+  app.append(tabBar, ...Object.values(panels));
+
   const s = data.settings;
   const sc = document.createElement("div");
   sc.className = "card";
@@ -320,7 +346,7 @@ function build() {
     field("Orders WhatsApp number (digits, with country code)", s, "whatsapp", { wide: true, inputMode: "numeric" })
   );
   sc.append(sg);
-  app.append(sc);
+  panels.settings.append(sc);
 
   // Opening hours and pausing orders
   const hc = document.createElement("div");
@@ -343,7 +369,7 @@ function build() {
       field("Opens", s.hours[key], "open", { type: "time" }), field("Closes", s.hours[key], "close", { type: "time" }));
     hc.append(r);
   }
-  app.append(hc);
+  panels.settings.append(hc);
 
   // Delivery rules
   const dc = document.createElement("div");
@@ -351,7 +377,7 @@ function build() {
   dc.innerHTML = "<h3 style='margin-top:0'>Delivery</h3>";
   const dnote = document.createElement("p");
   dnote.className = "note";
-  dnote.textContent = "If you add delivery areas, each has its own fee and the customer must pick one. With no areas, the flat delivery fee above is used.";
+  dnote.textContent = "If you add delivery areas, each has its own fee and the customer must pick one. With no areas, the flat delivery fee from the Settings tab is used.";
   const dg = document.createElement("div");
   dg.className = "grid";
   dg.append(
@@ -368,12 +394,10 @@ function build() {
     dc.append(r);
   }
   dc.append(btn("+ Add delivery area", "ghost", () => { s.deliveryAreas.push({ en: "", ar: "", fee: 0 }); dirty = true; say("Unsaved changes"); build(); }));
-  app.append(dc);
+  panels.delivery.append(dc);
 
   for (const venue of data.venues) {
-    const h = document.createElement("h2");
-    h.textContent = venue.key;
-    app.append(h);
+    const panel = panels["venue:" + venue.key];
     for (const sec of venue.sections) {
       const box = document.createElement("div");
       box.className = "sec";
@@ -394,9 +418,9 @@ function build() {
         sec.items.push({ id: nextId(), en: "", ar: "", dEn: "", dAr: "", price: 0, discount: 0, pic: "🍽️", isNew: true });
         dirty = true; say("Unsaved changes"); build();
       }));
-      app.append(box);
+      panel.append(box);
     }
-    app.append(btn("+ Add category", "ghost", () => {
+    panel.append(btn("+ Add category", "ghost", () => {
       venue.sections.push({ en: "New category", ar: "", items: [] });
       dirty = true; say("Unsaved changes"); build();
     }));
