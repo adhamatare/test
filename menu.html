@@ -79,10 +79,10 @@ const OFFERS = "__offers";  // Virtual tab listing every discounted item.
 const DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 const UI = {
-  en: { title: "Our Menu", table: "Table", add: "Add", offers: "Special offers", new: "NEW", soldOut: "Sold out", cart: "View order", order: "Your order", tableNo: "Table number", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", free: "Free", phone: "Phone number", address: "Delivery address", area: "Delivery area", pickArea: "Select your area", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", orderNo: "Order", lang: "العربية",
+  en: { title: "Our Menu", table: "Table", add: "Add", offers: "Special offers", new: "NEW", soldOut: "Sold out", cart: "View order", order: "Your order", tableNo: "Table number", name: "Your name", customer: "Customer", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", free: "Free", phone: "Phone number", address: "Delivery address", area: "Delivery area", pickArea: "Select your area", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", orderNo: "Order", lang: "العربية",
         closed: "We're closed right now", paused: "Online ordering is paused right now", todayHours: "Today's hours", closedToday: "Closed today", minOrder: "Minimum order for delivery is", badPhone: "Please enter a valid phone number", needArea: "Please select your delivery area",
         confirmTitle: "Almost done!", confirmText: "WhatsApp opened with your order. Press Send in WhatsApp to place it. Your order is NOT placed until you send the message.", openAgain: "Open WhatsApp again", sent: "I sent it", back: "Back to my order", thanks: "Thank you! We received your order message.", keep: "Keep this order number", done: "Done" },
-  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", offers: "العروض", new: "جديد", soldOut: "نفدت الكمية", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", free: "مجاني", phone: "رقم الهاتف", address: "عنوان التوصيل", area: "منطقة التوصيل", pickArea: "اختر منطقتك", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", orderNo: "الطلب", lang: "English",
+  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", offers: "العروض", new: "جديد", soldOut: "نفدت الكمية", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", name: "اسمك", customer: "العميل", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", free: "مجاني", phone: "رقم الهاتف", address: "عنوان التوصيل", area: "منطقة التوصيل", pickArea: "اختر منطقتك", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", orderNo: "الطلب", lang: "English",
         closed: "نحن مغلقون الآن", paused: "الطلب عبر الإنترنت متوقف مؤقتًا", todayHours: "ساعات اليوم", closedToday: "مغلق اليوم", minOrder: "الحد الأدنى لطلب التوصيل", badPhone: "يرجى إدخال رقم هاتف صحيح", needArea: "يرجى اختيار منطقة التوصيل",
         confirmTitle: "أوشكنا على الانتهاء!", confirmText: "فتح واتساب مع طلبك. اضغط إرسال في واتساب لتأكيد الطلب. لن يتم تسجيل طلبك حتى ترسل الرسالة.", openAgain: "افتح واتساب مرة أخرى", sent: "أرسلتها", back: "العودة إلى طلبي", thanks: "شكرًا لك! وصلتنا رسالة طلبك.", keep: "احتفظ برقم الطلب", done: "تم" }
 };
@@ -103,7 +103,7 @@ if (!UI[lang]) lang = "en";
 let tab = "";
 let tableNo = params.get("table") || "";
 // How the customer wants the order served; a table QR defaults to dine-in.
-const order = { type: tableNo ? "dinein" : "takeaway", table: tableNo, phone: "", address: "", area: "", note: "" };
+const order = { type: tableNo ? "dinein" : "takeaway", name: "", table: tableNo, phone: "", address: "", area: "", note: "" };
 const cart = {};   // id -> { name, ar, price, qty, note }
 let view = "order";   // order | confirm | done
 let pending = null;   // { id, url } once the WhatsApp chat has been opened
@@ -365,7 +365,7 @@ function renderSheet() {
       el.dataset.field = key;
       return el;
     };
-    const fields = [];
+    const fields = [field("name", t("name"), { autocomplete: "name" })];
     if (order.type === "dinein") fields.push(field("table", t("tableNo"), { inputMode: "numeric" }));
     if (order.type === "delivery") {
       fields.push(field("phone", t("phone"), { inputMode: "tel", autocomplete: "tel" }));
@@ -408,9 +408,10 @@ function renderSheet() {
 }
 
 // Short order number so the customer and the kitchen can refer to the same order.
+// Digits only: seconds since the epoch (repeats every ~2.8 hours) plus two random digits.
 const newOrderId = () => {
-  const a = (Date.now() % 1679616).toString(36).toUpperCase().padStart(4, "0");
-  const b = Math.floor(Math.random() * 1296).toString(36).toUpperCase().padStart(2, "0");
+  const a = String(Math.floor(Date.now() / 1000) % 10000).padStart(4, "0");
+  const b = String(Math.floor(Math.random() * 100)).padStart(2, "0");
   return a + b;
 };
 
@@ -423,6 +424,7 @@ function sendOrder() {
   // The message is always written in English so the kitchen can read it whatever language the customer used.
   const { sum } = totals();
   if (!openStatus().open) { renderSheet(); return; }
+  if (order.name.trim().length < 2) return flagBad('#panel [data-field="name"]');
   if (order.type === "dinein" && !order.table.trim()) return flagBad('#panel [data-field="table"]');
   if (order.type === "delivery") {
     if (!validPhone(order.phone)) return flagBad('#panel [data-field="phone"]');
@@ -431,7 +433,7 @@ function sendOrder() {
   }
   const id = newOrderId();
   const fee = deliveryFee(sum);
-  const lines = [`*${UI.en.greeting} #${id}*`, `${UI.en.type}: ${UI.en[order.type]}`];
+  const lines = [`*${UI.en.greeting} #${id}*`, `${UI.en.customer}: ${order.name.trim()}`, `${UI.en.type}: ${UI.en[order.type]}`];
   if (order.type === "dinein") lines.push(`${UI.en.table}: ${order.table.trim()}`);
   if (order.type === "delivery") {
     const area = (SETTINGS.deliveryAreas || [])[order.area];
