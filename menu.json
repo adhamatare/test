@@ -65,8 +65,8 @@
               "price": 5,
               "discount": 0,
               "pic": "🍲",
-              "isNew": true,
-              "soldOut": false,
+              "isNew": false,
+              "soldOut": true,
               "hidden": false
             },
             {
