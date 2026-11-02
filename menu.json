@@ -290,5 +290,40 @@
         }
       ]
     }
+  ],
+  "bundles": [
+    {
+      "id": "nmvzi1lr7934",
+      "en": "HasaMix",
+      "ar": "",
+      "dEn": "gjghj",
+      "dAr": "",
+      "price": 150,
+      "pic": "🎁",
+      "isNew": true,
+      "hidden": false,
+      "items": [
+        {
+          "id": "i1",
+          "qty": 4
+        },
+        {
+          "id": "i10",
+          "qty": 4
+        },
+        {
+          "id": "i18",
+          "qty": 4
+        },
+        {
+          "id": "i5",
+          "qty": 4
+        },
+        {
+          "id": "i6",
+          "qty": 4
+        }
+      ]
+    }
   ]
 }
