@@ -97,7 +97,7 @@
               "discount": 50,
               "pic": "🍗",
               "isNew": true,
-              "soldOut": true
+              "soldOut": false
             },
             {
               "id": "i5",
@@ -300,7 +300,7 @@
       "dAr": "",
       "price": 85,
       "pic": "🎁",
-      "isNew": true,
+      "isNew": false,
       "hidden": false,
       "items": [
         {
@@ -321,7 +321,7 @@
         },
         {
           "id": "i6",
-          "qty": 4
+          "qty": 7
         }
       ]
     }
