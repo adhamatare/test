@@ -55,20 +55,7 @@
         {
           "en": "Starters",
           "ar": "المقبلات",
-          "items": [
-            {
-              "id": "i2",
-              "en": "Caesar Salad",
-              "ar": "سلطة سيزر",
-              "dEn": "Romaine, parmesan, croutons",
-              "dAr": "خس وبارميزان وخبز محمص",
-              "price": 7,
-              "discount": 52,
-              "pic": "🥗",
-              "isNew": false,
-              "soldOut": false
-            }
-          ]
+          "items": []
         },
         {
           "en": "Mains",
@@ -103,7 +90,7 @@
               "dEn": "Lemon butter, seasonal greens",
               "dAr": "زبدة وليمون مع خضار الموسم",
               "price": 16,
-              "discount": 0,
+              "discount": 20,
               "pic": "🐟",
               "isNew": true
             }
