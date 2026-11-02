@@ -4,7 +4,7 @@
     "deliveryFee": 3,
     "whatsapp": "972592151626",
     "timezone": "Asia/Jerusalem",
-    "useHours": true,
+    "useHours": false,
     "pauseOrders": false,
     "minDeliveryOrder": 50,
     "freeDeliveryOver": 100,
