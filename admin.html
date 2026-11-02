@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Menu Admin</title>
+<style>
+  body { font-family: system-ui, "Segoe UI", Tahoma, sans-serif; margin: 0; background: #faf7f2; color: #2b2118; padding-bottom: 90px; }
+  main { max-width: 760px; margin: 0 auto; padding: 16px; }
+  h1 { margin: 8px 0 4px; }
+  h2 { border-bottom: 2px solid #6b3f1d; padding-bottom: 4px; margin-top: 32px; }
+  .note { color: #7a6a58; font-size: 14px; }
+  .card { background: #fff; border-radius: 12px; padding: 14px; margin: 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+  .grid .wide { grid-column: 1 / -1; }
+  label { display: block; font-size: 13px; color: #7a6a58; }
+  input[type=text], input[type=number], input[type=password] { width: 100%; box-sizing: border-box; padding: 9px; font-size: 15px; border: 1px solid #c9bba8; border-radius: 8px; margin-top: 3px; }
+  button { padding: 9px 14px; border: 0; border-radius: 8px; background: #6b3f1d; color: #fff; font-size: 15px; cursor: pointer; }
+  button.ghost { background: #e8dfd3; color: #2b2118; }
+  button.danger { background: #c0392b; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+  .sec { background: #f1e8da; border-radius: 12px; padding: 10px; margin: 14px 0; }
+  .sec-head { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: end; }
+  .special { font-weight: 700; color: #c0392b; align-self: end; padding-bottom: 10px; }
+  .check { display: flex; align-items: center; gap: 6px; font-size: 15px; color: #2b2118; }
+  #bar { position: fixed; inset-inline: 0; bottom: 0; background: #2b2118; color: #fff; padding: 12px 16px; display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+  #bar .msg { flex: 1; font-size: 14px; }
+  #bar button { background: #1fa855; font-weight: 600; }
+  #bar button.ghost { background: #55483b; font-weight: 400; }
+  .err { color: #c0392b; }
+  .ok { color: #7be3a1; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Menu Admin</h1>
+  <p class="note">Edit prices, discounts and items. <a href="menu.html" target="_blank">Open the menu</a></p>
+  <div id="login" class="card" hidden>
+    <h3 style="margin-top:0">Sign in</h3>
+    <p class="note">Paste your GitHub access token (it only stays in this browser). It needs <b>Contents: Read and write</b> on <code>adhamatare/test</code>.</p>
+    <label>Access token<input type="password" id="token" autocomplete="off"></label>
+    <div class="row"><button id="connect">Connect</button><span id="loginMsg" class="err"></span></div>
+  </div>
+  <div id="app" hidden></div>
+</main>
+<div id="bar" hidden><span class="msg" id="msg"></span><button id="logout" class="ghost">Log out</button><button id="save">Save changes</button></div>
+
+<script>
+const REPO = "adhamatare/test", BRANCH = "main", PATH = "menu.json";
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} }
+};
+let token = store.get("ghToken") || "", sha = "", data = null, dirty = false;
+
+const gh = (url, opts = {}) => fetch("https://api.github.com" + url, {
+  ...opts,
+  headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", ...(opts.headers || {}) }
+});
+
+const decode = b64 => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\s/g, "")), c => c.charCodeAt(0)));
+const encode = text => { let s = ""; for (const b of new TextEncoder().encode(text)) s += String.fromCharCode(b); return btoa(s); };
+
+function say(text, cls = "") { const m = $("msg"); m.textContent = text; m.className = "msg " + cls; }
+const finalPrice = it => Math.round(it.price * (100 - (it.discount || 0))) / 100;
+
+async function connect() {
+  $("loginMsg").textContent = "";
+  try {
+    const repo = await gh(`/repos/${REPO}`);
+    if (repo.status === 401) throw new Error("That token was not accepted.");
+    if (!repo.ok) throw new Error("Cannot open the repository with this token.");
+    if (!(await repo.json()).permissions?.push) throw new Error("This token can only read. It needs Contents: Read and write.");
+    const res = await gh(`/repos/${REPO}/contents/${PATH}?ref=${BRANCH}`);
+    if (!res.ok) throw new Error("Could not load menu.json (" + res.status + ").");
+    const file = await res.json();
+    sha = file.sha;
+    data = JSON.parse(decode(file.content));
+  } catch (e) {
+    token = ""; store.del("ghToken");
+    $("login").hidden = false; $("app").hidden = true; $("bar").hidden = true;
+    $("loginMsg").textContent = e.message;
+    return;
+  }
+  store.set("ghToken", token);
+  $("login").hidden = true; $("app").hidden = false; $("bar").hidden = false;
+  dirty = false; say("Loaded the current menu.");
+  build();
+}
+
+// ---- Editor ----
+function field(label, obj, key, { type = "text", wide = false, ...attrs } = {}) {
+  const wrap = document.createElement("label");
+  if (wide) wrap.className = "wide";
+  wrap.append(label);
+  const el = document.createElement("input");
+  el.type = type; el.value = obj[key] ?? "";
+  Object.assign(el, attrs);
+  el.oninput = () => {
+    obj[key] = type === "number" ? (el.value === "" ? 0 : Number(el.value)) : el.value;
+    dirty = true; say("Unsaved changes");
+    el.dispatchEvent(new CustomEvent("edited", { bubbles: true }));
+  };
+  wrap.append(el);
+  return wrap;
+}
+
+function btn(text, cls, fn) {
+  const b = document.createElement("button");
+  b.textContent = text; if (cls) b.className = cls; b.onclick = fn;
+  return b;
+}
+
+function nextId() { return "n" + Date.now().toString(36) + Math.floor(Math.random() * 1000); }
+
+function itemCard(sec, it) {
+  const card = document.createElement("div");
+  card.className = "card";
+  const grid = document.createElement("div");
+  grid.className = "grid";
+  const special = document.createElement("div");
+  const refresh = () => {
+    special.className = "special";
+    special.textContent = it.discount > 0 ? `Special price: ${data.settings.currency}${finalPrice(it).toFixed(2)}` : "No discount";
+  };
+  refresh();
+  grid.append(
+    field("Title (English)", it, "en"),
+    field("Title (Arabic)", it, "ar", { dir: "rtl" }),
+    field("Description (English)", it, "dEn"),
+    field("Description (Arabic)", it, "dAr", { dir: "rtl" }),
+    field("Price", it, "price", { type: "number", min: 0, step: "0.01" }),
+    field("Discount % (0 = none)", it, "discount", { type: "number", min: 0, max: 100, step: "1" }),
+    field("Picture (emoji, or image path like images/burger.jpg)", it, "pic", { wide: true }),
+    special
+  );
+  card.addEventListener("edited", refresh);
+  const row = document.createElement("div");
+  row.className = "row";
+  const chk = document.createElement("label");
+  chk.className = "check";
+  const box = document.createElement("input");
+  box.type = "checkbox"; box.checked = !!it.isNew;
+  box.onchange = () => { it.isNew = box.checked; dirty = true; say("Unsaved changes"); };
+  chk.append(box, "Mark as NEW");
+  row.append(chk, btn("Delete item", "danger", () => {
+    if (!confirm(`Delete "${it.en || "this item"}"?`)) return;
+    sec.items.splice(sec.items.indexOf(it), 1);
+    dirty = true; say("Unsaved changes"); build();
+  }));
+  card.append(grid, row);
+  return card;
+}
+
+function build() {
+  const app = $("app");
+  app.innerHTML = "";
+
+  const s = data.settings;
+  const sc = document.createElement("div");
+  sc.className = "card";
+  sc.innerHTML = "<h3 style='margin-top:0'>Settings</h3>";
+  const sg = document.createElement("div");
+  sg.className = "grid";
+  sg.append(
+    field("Currency symbol", s, "currency"),
+    field("Delivery fee", s, "deliveryFee", { type: "number", min: 0, step: "0.01" }),
+    field("Orders WhatsApp number (digits, with country code)", s, "whatsapp", { wide: true, inputMode: "numeric" })
+  );
+  sc.append(sg);
+  app.append(sc);
+
+  for (const venue of data.venues) {
+    const h = document.createElement("h2");
+    h.textContent = venue.key;
+    app.append(h);
+    for (const sec of venue.sections) {
+      const box = document.createElement("div");
+      box.className = "sec";
+      const head = document.createElement("div");
+      head.className = "sec-head";
+      head.append(
+        field("Category (English)", sec, "en"),
+        field("Category (Arabic)", sec, "ar", { dir: "rtl" }),
+        btn("Delete category", "danger", () => {
+          if (!confirm(`Delete the category "${sec.en}" and all its items?`)) return;
+          venue.sections.splice(venue.sections.indexOf(sec), 1);
+          dirty = true; say("Unsaved changes"); build();
+        })
+      );
+      box.append(head);
+      for (const it of sec.items) box.append(itemCard(sec, it));
+      box.append(btn("+ Add new item", "", () => {
+        sec.items.push({ id: nextId(), en: "", ar: "", dEn: "", dAr: "", price: 0, discount: 0, pic: "🍽️", isNew: true });
+        dirty = true; say("Unsaved changes"); build();
+      }));
+      app.append(box);
+    }
+    app.append(btn("+ Add category", "ghost", () => {
+      venue.sections.push({ en: "New category", ar: "", items: [] });
+      dirty = true; say("Unsaved changes"); build();
+    }));
+  }
+}
+
+// ---- Save ----
+function validate() {
+  for (const v of data.venues) for (const sec of v.sections) for (const it of sec.items) {
+    if (!it.en.trim()) return `An item in "${sec.en}" has no English title.`;
+    if (!(it.price >= 0)) return `"${it.en}" has an invalid price.`;
+    if (!(it.discount >= 0 && it.discount <= 100)) return `"${it.en}" needs a discount between 0 and 100.`;
+  }
+  return "";
+}
+
+async function save() {
+  const problem = validate();
+  if (problem) { say(problem, "err"); return; }
+  $("save").disabled = true; say("Saving...");
+  try {
+    const res = await gh(`/repos/${REPO}/contents/${PATH}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        message: "Update menu from admin page",
+        content: encode(JSON.stringify(data, null, 2) + "\n"),
+        sha, branch: BRANCH
+      })
+    });
+    if (res.status === 409 || res.status === 422) throw new Error("The menu was changed somewhere else. Reload this page and try again.");
+    if (!res.ok) throw new Error("Save failed (" + res.status + ").");
+    sha = (await res.json()).content.sha;
+    dirty = false;
+    say("Saved. The live menu updates in about a minute.", "ok");
+  } catch (e) {
+    say(e.message, "err");
+  }
+  $("save").disabled = false;
+}
+
+$("connect").onclick = () => { token = $("token").value.trim(); if (token) connect(); };
+$("save").onclick = save;
+$("logout").onclick = () => { if (dirty && !confirm("Discard unsaved changes?")) return; store.del("ghToken"); location.reload(); };
+window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+if (token) connect(); else $("login").hidden = false;
+</script>
+</body>
+</html>

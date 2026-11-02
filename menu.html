@@ -21,6 +21,10 @@
   .info { flex: 1; }
   .info small { display: block; color: #7a6a58; }
   .price { white-space: nowrap; font-weight: 600; }
+  .was { display: block; color: #9a8a78; font-weight: 400; font-size: 13px; }
+  .badge { display: inline-block; margin-inline-start: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #fff; vertical-align: middle; }
+  .badge.new { background: #1fa855; }
+  .badge.off { background: #c0392b; }
   .buy { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .qty { display: flex; align-items: center; gap: 8px; }
   .qty button, .add { border: 0; border-radius: 8px; background: #6b3f1d; color: #fff; font-size: 16px; min-width: 32px; height: 32px; cursor: pointer; }
@@ -54,54 +58,20 @@
 <div id="sheet"><div class="panel" id="panel"></div></div>
 <script>
 // ---- Settings ----
-const WHATSAPP_NUMBER = "972522866414";   // Counter/kitchen WhatsApp, digits only with country code, e.g. "201001234567". Empty = user picks the contact.
-const CURRENCY = { en: "$", ar: "$" };
-const DELIVERY_FEE = 3;       // Added to the total for delivery orders. Set to 0 for free delivery.
+// Overwritten from menu.json "settings" (editable in admin.html).
+let WHATSAPP_NUMBER = "";   // Counter/kitchen WhatsApp, digits only with country code. Empty = customer picks the contact.
+let CURRENCY = { en: "$", ar: "$" };
+let DELIVERY_FEE = 0;       // Added to the total for delivery orders.
+const OFFERS = "__offers";  // Virtual tab listing every discounted item.
 
 const UI = {
-  en: { title: "Our Menu", table: "Table", add: "Add", cart: "View order", order: "Your order", tableNo: "Table number", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", phone: "Phone number", address: "Delivery address", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", lang: "العربية" },
-  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", phone: "رقم الهاتف", address: "عنوان التوصيل", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", lang: "English" }
+  en: { title: "Our Menu", table: "Table", add: "Add", offers: "Special offers", new: "NEW", cart: "View order", order: "Your order", tableNo: "Table number", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", phone: "Phone number", address: "Delivery address", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", lang: "العربية" },
+  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", offers: "العروض", new: "جديد", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", phone: "رقم الهاتف", address: "عنوان التوصيل", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", lang: "English" }
 };
 
-// Item: [English name, Arabic name, English description, Arabic description, price, picture]
-// picture is an emoji, or an image path/URL (e.g. "images/burger.jpg") for a real photo.
-const MENUS = {
-  "Restaurant": { ar: "المطعم", sections: [
-    { en: "Starters", ar: "المقبلات", items: [
-      ["Lentil Soup", "شوربة عدس", "Red lentils, lemon, cumin", "عدس أحمر وليمون وكمون", 4.5, "🍲"],
-      ["Caesar Salad", "سلطة سيزر", "Romaine, parmesan, croutons", "خس وبارميزان وخبز محمص", 7, "🥗"],
-      ["Hummus Plate", "طبق حمص", "With warm pita", "مع خبز بلدي ساخن", 5.5, "🫓"]
-    ]},
-    { en: "Mains", ar: "الأطباق الرئيسية", items: [
-      ["Grilled Chicken", "دجاج مشوي", "Herb marinade, rice, vegetables", "متبل بالأعشاب مع أرز وخضار", 13, "🍗"],
-      ["Beef Burger", "برجر لحم", "Cheddar, fries", "جبنة شيدر وبطاطس", 12, "🍔"],
-      ["Pasta Alfredo", "باستا ألفريدو", "Creamy parmesan sauce", "صلصة كريمية بالبارميزان", 11, "🍝"],
-      ["Grilled Salmon", "سلمون مشوي", "Lemon butter, seasonal greens", "زبدة وليمون مع خضار الموسم", 16, "🐟"]
-    ]},
-    { en: "Desserts", ar: "الحلويات", items: [
-      ["Cheesecake", "تشيز كيك", "Classic New York style", "على الطريقة الكلاسيكية", 6, "🍰"],
-      ["Chocolate Lava Cake", "كيك الشوكولاتة", "Warm center, vanilla ice cream", "قلب دافئ مع آيس كريم فانيليا", 6.5, "🍫"]
-    ]}
-  ]},
-  "Coffee Shop": { ar: "الكافيه", sections: [
-    { en: "Hot Drinks", ar: "مشروبات ساخنة", items: [
-      ["Espresso", "إسبريسو", "Double shot", "شوت مزدوج", 2.5, "☕"],
-      ["Cappuccino", "كابتشينو", "Steamed milk foam", "رغوة حليب", 3.5, "☕"],
-      ["Latte", "لاتيه", "Smooth and milky", "ناعم بالحليب", 3.8, "🥛"],
-      ["Hot Chocolate", "شوكولاتة ساخنة", "With whipped cream", "مع الكريمة", 3.5, "🍫"]
-    ]},
-    { en: "Cold Drinks", ar: "مشروبات باردة", items: [
-      ["Iced Latte", "آيس لاتيه", "Over ice", "مع الثلج", 4, "🧊"],
-      ["Cold Brew", "كولد برو", "Steeped 18 hours", "منقوع ١٨ ساعة", 4, "🥤"],
-      ["Fresh Orange Juice", "عصير برتقال طازج", "Squeezed to order", "يُعصر عند الطلب", 4.5, "🍊"]
-    ]},
-    { en: "Bakery", ar: "مخبوزات", items: [
-      ["Butter Croissant", "كرواسون بالزبدة", "Baked daily", "يُخبز يوميًا", 3, "🥐"],
-      ["Blueberry Muffin", "مافن التوت", "", "", 3.2, "🧁"],
-      ["Banana Bread", "كيك الموز", "", "", 3.5, "🍞"]
-    ]}
-  ]}
-};
+// Menu content comes from menu.json (edited through admin.html).
+// Item: { id, en, ar, dEn, dAr, price, discount (percent), pic, isNew }. pic is an emoji, or an image path/URL.
+let MENUS = {};
 
 // ---- State ----
 const params = new URLSearchParams(location.search);
@@ -111,8 +81,7 @@ const store = {
 };
 let lang = params.get("lang") || store.get("lang") || "en";
 if (!UI[lang]) lang = "en";
-let tab = decodeURIComponent(location.hash.slice(1));
-if (!MENUS[tab]) tab = Object.keys(MENUS)[0];
+let tab = "";
 let tableNo = params.get("table") || "";
 // How the customer wants the order served; a table QR defaults to dine-in.
 const order = { type: tableNo ? "dinein" : "takeaway", table: tableNo, phone: "", address: "", note: "" };
@@ -140,6 +109,17 @@ function picture(src) {
   return pic;
 }
 
+const finalPrice = it => Math.round(it.price * (100 - (it.discount || 0))) / 100;
+
+function sectionsFor(key) {
+  if (key !== OFFERS) return MENUS[key].sections;
+  return Object.entries(MENUS)
+    .map(([k, m]) => ({ en: k, ar: m.ar, items: m.sections.flatMap(s => s.items).filter(it => it.discount > 0) }))
+    .filter(s => s.items.length);
+}
+
+const hasOffers = () => sectionsFor(OFFERS).length > 0;
+
 function change(id, name, price, delta, ar) {
   const l = cart[id] || (cart[id] = { name, ar, price, qty: 0 });
   l.qty += delta;
@@ -149,6 +129,7 @@ function change(id, name, price, delta, ar) {
 
 // ---- Render ----
 function render() {
+  if (!tab) return;   // menu.json not loaded yet
   document.documentElement.lang = lang;
   document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
   $("title").textContent = t("title");
@@ -156,9 +137,11 @@ function render() {
   $("table").textContent = tableNo ? `${t("table")} ${tableNo}` : "";
 
   $("tabs").innerHTML = "";
-  for (const [key, m] of Object.entries(MENUS)) {
+  const tabs = Object.entries(MENUS).map(([key, m]) => [key, lang === "ar" ? m.ar : key]);
+  if (hasOffers()) tabs.push([OFFERS, t("offers")]);
+  for (const [key, label] of tabs) {
     const b = document.createElement("button");
-    b.textContent = lang === "ar" ? m.ar : key;
+    b.textContent = label;
     b.className = key === tab ? "active" : "";
     b.onclick = () => { tab = key; history.replaceState(null, "", "#" + encodeURIComponent(key)); render(); };
     $("tabs").appendChild(b);
@@ -166,25 +149,29 @@ function render() {
 
   const menu = $("menu");
   menu.innerHTML = "";
-  for (const [si, sec] of MENUS[tab].sections.entries()) {
+  for (const sec of sectionsFor(tab)) {
     const h = document.createElement("h2");
     h.textContent = sec[lang];
     menu.appendChild(h);
-    for (const [ii, [en, ar, dEn, dAr, price, pic]] of sec.items.entries()) {
-      const id = `${tab}|${si}|${ii}`;
+    for (const it of sec.items) {
+      const { id, en, ar, pic } = it;
+      const price = finalPrice(it);
       const name = lang === "ar" ? ar : en;
-      const desc = lang === "ar" ? dAr : dEn;
+      const desc = lang === "ar" ? it.dAr : it.dEn;
       const row = document.createElement("div");
       row.className = "item";
       const info = document.createElement("div");
       info.className = "info";
       info.textContent = name;
+      if (it.isNew) { const nb = document.createElement("span"); nb.className = "badge new"; nb.textContent = t("new"); info.appendChild(nb); }
+      if (it.discount > 0) { const db = document.createElement("span"); db.className = "badge off"; db.textContent = `-${fmtNum(it.discount)}%`; info.appendChild(db); }
       if (desc) { const s = document.createElement("small"); s.textContent = desc; info.appendChild(s); }
       const buy = document.createElement("div");
       buy.className = "buy";
       const p = document.createElement("div");
       p.className = "price";
-      p.textContent = money(price);
+      if (it.discount > 0) { const old = document.createElement("s"); old.className = "was"; old.textContent = money(it.price); p.appendChild(old); }
+      p.appendChild(document.createTextNode(money(price)));
       buy.appendChild(p);
       const qty = cart[id] ? cart[id].qty : 0;
       if (qty) {
@@ -295,7 +282,7 @@ function sendOrder() {
     return;
   }
   const note = order.note.trim();
-  const lines = [`*${UI.en.greeting}* (${tab})`, `${UI.en.type}: ${UI.en[order.type]}`];
+  const lines = [`*${UI.en.greeting}*`, `${UI.en.type}: ${UI.en[order.type]}`];
   if (order.type === "dinein") lines.push(`${UI.en.table}: ${order.table.trim()}`);
   if (order.type === "delivery") lines.push(`${UI.en.phone}: ${order.phone.trim()}`, `${UI.en.address}: ${order.address.trim()}`);
   for (const l of Object.values(cart)) {
@@ -313,7 +300,26 @@ function sendOrder() {
 $("lang").onclick = () => { lang = lang === "en" ? "ar" : "en"; store.set("lang", lang); render(); };
 $("bar").onclick = () => { $("sheet").style.display = "flex"; renderSheet(); };
 $("sheet").onclick = e => { if (e.target === $("sheet")) $("sheet").style.display = "none"; };
-render();
+
+async function init() {
+  try {
+    const res = await fetch("menu.json?t=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    const s = data.settings || {};
+    WHATSAPP_NUMBER = s.whatsapp || "";
+    CURRENCY = { en: s.currency || "$", ar: s.currency || "$" };
+    DELIVERY_FEE = Number(s.deliveryFee) || 0;
+    MENUS = Object.fromEntries(data.venues.map(v => [v.key, v]));
+  } catch (e) {
+    $("menu").textContent = "Could not load the menu. Please refresh.";
+    return;
+  }
+  const wanted = decodeURIComponent(location.hash.slice(1));
+  tab = MENUS[wanted] || (wanted === OFFERS && hasOffers()) ? wanted : Object.keys(MENUS)[0];
+  render();
+}
+init();
 </script>
 </body>
 </html>
