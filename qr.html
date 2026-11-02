@@ -25,14 +25,13 @@
 <input id="tableNo" placeholder="e.g. 5" inputmode="numeric">
 
 <div class="cards">
-  <div class="card"><h3>Restaurant</h3><div class="qr" id="qr-restaurant"></div><br><button data-id="restaurant">Download PNG</button></div>
-  <div class="card"><h3>Coffee Shop</h3><div class="qr" id="qr-coffee"></div><br><button data-id="coffee">Download PNG</button></div>
+  <div class="card"><h3>Restaurant + Coffee Shop</h3><div class="qr" id="qr-menu"></div><br><button data-id="menu">Download PNG</button></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const base = document.getElementById("base");
-const targets = { restaurant: "Restaurant", coffee: "Coffee Shop" };
+const targets = { menu: "" };   // one QR opens the menu with both tabs
 const saved = (() => { try { return localStorage.getItem("menuUrl"); } catch { return null; } })();
 base.value = saved || (location.protocol.startsWith("http") ? new URL("menu.html", location.href).href : "https://adhamatare.github.io/test/menu.html");
 
@@ -45,7 +44,7 @@ function render() {
     let u;
     try { u = new URL(base.value.split("#")[0]); } catch { continue; }
     if (tableEl.value.trim()) u.searchParams.set("table", tableEl.value.trim());
-    const url = u.href + "#" + encodeURIComponent(tab);
+    const url = tab ? u.href + "#" + encodeURIComponent(tab) : u.href;
     new QRCode(el, { text: url, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
   }
 }
