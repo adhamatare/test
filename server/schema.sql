@@ -50,6 +50,40 @@ CREATE TABLE IF NOT EXISTS bundles (
   position int  NOT NULL DEFAULT 0
 );
 
+-- Orders keep a snapshot of names and prices, so editing the menu later never changes history.
+CREATE SEQUENCE IF NOT EXISTS order_number_seq START 100001;
+
+CREATE TABLE IF NOT EXISTS orders (
+  id           serial PRIMARY KEY,
+  number       int  NOT NULL UNIQUE DEFAULT nextval('order_number_seq'),
+  status       text NOT NULL DEFAULT 'new' CHECK (status IN ('new','preparing','ready','done','cancelled')),
+  type         text NOT NULL CHECK (type IN ('dinein','takeaway','delivery')),
+  customer     text NOT NULL,
+  table_no     text NOT NULL DEFAULT '',
+  phone        text NOT NULL DEFAULT '',
+  address      text NOT NULL DEFAULT '',
+  area         text NOT NULL DEFAULT '',
+  note         text NOT NULL DEFAULT '',
+  subtotal     numeric(10,2) NOT NULL,
+  delivery_fee numeric(10,2) NOT NULL DEFAULT 0,
+  savings      numeric(10,2) NOT NULL DEFAULT 0,
+  total        numeric(10,2) NOT NULL,
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS orders_status_idx ON orders(status, created_at);
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id         serial PRIMARY KEY,
+  order_id   int  NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  ref        text NOT NULL,              -- item id, or "b:<id>" for a combo
+  name       text NOT NULL,
+  parts      text NOT NULL DEFAULT '',   -- what a combo contains
+  unit_price numeric(10,2) NOT NULL,
+  qty        int  NOT NULL CHECK (qty >= 1),
+  note       text NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS order_items_order_idx ON order_items(order_id);
+
 -- Deleting an item removes it from every combo (the admin page did this by hand).
 CREATE TABLE IF NOT EXISTS bundle_items (
   bundle_id text NOT NULL REFERENCES bundles(id) ON DELETE CASCADE,
