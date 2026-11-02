@@ -6,6 +6,7 @@ services:
     name: menu-api
     runtime: node
     plan: free
+    region: frankfurt        # keep this next to the Neon database region (AWS Europe, Frankfurt) and your customers
     rootDir: server
     buildCommand: npm ci
     startCommand: npm run start:prod
