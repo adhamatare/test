@@ -5,13 +5,13 @@
     "whatsapp": "972592151626",
     "timezone": "Asia/Jerusalem",
     "useHours": false,
-    "pauseOrders": true,
+    "pauseOrders": false,
     "minDeliveryOrder": 50,
     "freeDeliveryOver": 100,
     "deliveryAreas": [],
     "hours": {
       "mon": {
-        "closed": false,
+        "closed": true,
         "open": "09:00",
         "close": "23:00"
       },
