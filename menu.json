@@ -78,7 +78,7 @@
               "price": 7,
               "discount": 52,
               "pic": "🥗",
-              "isNew": true,
+              "isNew": false,
               "soldOut": false
             }
           ]
