@@ -50,6 +50,23 @@ CREATE TABLE IF NOT EXISTS bundles (
   position int  NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS users (
+  id            serial PRIMARY KEY,
+  username      text NOT NULL,
+  password_hash text NOT NULL,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS users_username_idx ON users (lower(username));
+
+-- Only a hash of the session token is stored, so a leaked database cannot be used to log in.
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash text PRIMARY KEY,
+  user_id    int  NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL
+);
+CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions(expires_at);
+
 -- Orders keep a snapshot of names and prices, so editing the menu later never changes history.
 CREATE SEQUENCE IF NOT EXISTS order_number_seq START 100001;
 

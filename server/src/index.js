@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { pool } from "./db.js";
-import { timingSafeEqual } from "node:crypto";
+import { lockedFor, login, logout, requireAdmin } from "./auth.js";
 import { loadMenu } from "./menu.js";
 import { OrderError, STATUSES, listOrders, priceOrder, saveOrder, setStatus } from "./orders.js";
 
@@ -25,14 +25,22 @@ app.get("/api/menu", async (_req, res) => {
 });
 
 // ---- Orders ----
-// Temporary staff protection: one secret key from .env. A real login replaces this later.
-function requireAdmin(req, res, next) {
-  const key = process.env.ADMIN_KEY || "";
-  const given = Buffer.from(String(req.get("x-admin-key") || ""));
-  const want = Buffer.from(key);
-  if (!key || given.length !== want.length || !timingSafeEqual(given, want)) return res.status(401).json({ error: "Not allowed" });
-  next();
-}
+// ---- Staff login ----
+app.post("/api/auth/login", async (req, res, next) => {
+  try {
+    const wait = lockedFor(req.ip);
+    if (wait) return res.status(429).json({ error: `Too many wrong passwords. Try again in ${Math.ceil(wait / 60000)} minutes.` });
+    const session = await login(req.ip, req.body?.username, req.body?.password);
+    if (!session) return res.status(401).json({ error: "Wrong username or password" });
+    res.json(session);
+  } catch (e) { next(e); }
+});
+
+app.get("/api/auth/me", requireAdmin, (req, res) => res.json({ username: req.user.username }));
+
+app.post("/api/auth/logout", async (req, res, next) => {
+  try { await logout(req); res.json({ ok: true }); } catch (e) { next(e); }
+});
 
 // At most 10 order attempts per minute from one address.
 const hits = new Map();

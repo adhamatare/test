@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node --env-file=.env src/index.js",
     "setup": "node --env-file=.env src/setup.js",
-    "import": "node --env-file=.env src/import.js"
+    "import": "node --env-file=.env src/import.js",
+    "create-user": "node --env-file=.env src/createuser.js"
   },
   "dependencies": {
     "cors": "^2.8.6",
