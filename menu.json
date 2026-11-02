@@ -22,8 +22,8 @@
               "price": 5,
               "discount": 0,
               "pic": "🍲",
-              "isNew": false,
-              "soldOut": false
+              "isNew": true,
+              "soldOut": true
             },
             {
               "id": "i2",
@@ -46,7 +46,8 @@
               "price": 5.5,
               "discount": 0,
               "pic": "images/i3-mvyktvvh.jpg",
-              "isNew": true
+              "isNew": false,
+              "soldOut": true
             }
           ]
         },
@@ -60,10 +61,10 @@
               "ar": "دجاج مشوي",
               "dEn": "Herb marinade, rice, vegetables",
               "dAr": "متبل بالأعشاب مع أرز وخضار",
-              "price": 13,
-              "discount": 0,
+              "price": 5,
+              "discount": 50,
               "pic": "🍗",
-              "isNew": false
+              "isNew": true
             },
             {
               "id": "i5",
