@@ -33,7 +33,7 @@
               "price": 7,
               "discount": 0,
               "pic": "🥗",
-              "isNew": true
+              "isNew": false
             },
             {
               "id": "i3",
@@ -43,7 +43,7 @@
               "dAr": "مع خبز بلدي ساخن",
               "price": 5.5,
               "discount": 0,
-              "pic": "🫓",
+              "pic": "images/i3-mvyktvvh.jpg",
               "isNew": true
             }
           ]
