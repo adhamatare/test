@@ -28,6 +28,9 @@
   [hidden] { display: none !important; }
   .search { display: flex; gap: 8px; align-items: center; }
   .search input { flex: 1; box-sizing: border-box; padding: 11px; font-size: 16px; border: 1px solid #c9bba8; border-radius: 8px; }
+  .offer-add { display: grid; grid-template-columns: 1fr 130px auto; gap: 8px; align-items: center; }
+  .offer-add select, .offer-add input { box-sizing: border-box; width: 100%; padding: 10px; font-size: 15px; border: 1px solid #c9bba8; border-radius: 8px; background: #fff; }
+  @media (max-width: 560px) { .offer-add { grid-template-columns: 1fr 1fr; } .offer-add select { grid-column: 1 / -1; } }
   .crumb { font-size: 13px; color: #7a6a58; margin: 14px 0 -6px; }
   .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; padding: 8px 0; position: sticky; top: 0; z-index: 5; background: #faf7f2; }
   .tabs button { background: #e8dfd3; color: #2b2118; border-radius: 999px; padding: 10px 18px; }
@@ -318,7 +321,9 @@ function build() {
   app.append(summary);
 
   // One tab per area: Settings & hours, Delivery, then each venue's menu.
-  const tabsDef = [["settings", "Settings & hours"], ["delivery", "Delivery"], ...data.venues.map(v => ["venue:" + v.key, v.key])];
+  const allItems = data.venues.flatMap(v => v.sections.flatMap(sec => sec.items));
+  const offerCount = allItems.filter(i => i.discount > 0).length;
+  const tabsDef = [["settings", "Settings & hours"], ["delivery", "Delivery"], ...data.venues.map(v => ["venue:" + v.key, v.key]), ["offers", offerCount ? `Special offers (${offerCount})` : "Special offers"]];
   if (!tabsDef.some(([id]) => id === adminTab)) adminTab = "settings";
   const tabBar = document.createElement("div");
   tabBar.className = "tabs";
@@ -462,6 +467,64 @@ function build() {
       venue.sections.push({ en: "New category", ar: "", items: [] });
       dirty = true; say("Unsaved changes"); build();
     }));
+  }
+
+  // Special offers: every discounted item, plus a quick way to put another item on offer.
+  const op = panels.offers;
+  const intro = document.createElement("p");
+  intro.className = "note";
+  intro.textContent = "Items with a discount show on the customer's Special offers tab. Change a discount here, or use Remove offer to take an item off.";
+  op.append(intro);
+
+  const addBox = document.createElement("div");
+  addBox.className = "card";
+  addBox.innerHTML = "<h3 style='margin-top:0'>Put an item on offer</h3>";
+  const pick = document.createElement("select");
+  pick.setAttribute("aria-label", "Item to put on offer");
+  const first = document.createElement("option"); first.value = ""; first.textContent = "Choose an item"; pick.append(first);
+  const lookup = {};
+  for (const v of data.venues) {
+    const group = document.createElement("optgroup");
+    group.label = v.key;
+    for (const sec of v.sections) for (const it of sec.items) {
+      if (it.discount > 0) continue;
+      lookup[it.id] = it;
+      const o = document.createElement("option");
+      o.value = it.id; o.textContent = `${it.en || "(untitled)"} (${sec.en})`;
+      group.append(o);
+    }
+    if (group.children.length) pick.append(group);
+  }
+  const pct = document.createElement("input");
+  pct.type = "number"; pct.min = 1; pct.max = 100; pct.step = 1; pct.placeholder = "Discount %";
+  pct.setAttribute("aria-label", "Discount percent");
+  const addRow = document.createElement("div");
+  addRow.className = "offer-add";
+  addRow.append(pick, pct, btn("Add to offers", "", () => {
+    const it = lookup[pick.value], n = Number(pct.value);
+    if (!it) { say("Choose an item first.", "err"); return; }
+    if (!(n >= 1 && n <= 100)) { say("Enter a discount between 1 and 100.", "err"); return; }
+    it.discount = n; dirty = true; say("Unsaved changes"); build();
+  }));
+  addBox.append(addRow);
+  op.append(addBox);
+
+  let any = false;
+  for (const v of data.venues) for (const sec of v.sections) for (const it of sec.items) {
+    if (!(it.discount > 0)) continue;
+    any = true;
+    const crumb = document.createElement("div");
+    crumb.className = "crumb";
+    crumb.textContent = `${v.key} › ${sec.en}`;
+    const card = itemCard(sec, it);
+    card.lastElementChild.append(btn("Remove offer", "ghost", () => { it.discount = 0; dirty = true; say("Unsaved changes"); build(); }));
+    op.append(crumb, card);
+  }
+  if (!any) {
+    const none = document.createElement("p");
+    none.className = "note";
+    none.textContent = "No items are on offer right now.";
+    op.append(none);
   }
 }
 
