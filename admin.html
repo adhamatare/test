@@ -28,6 +28,8 @@
   [hidden] { display: none !important; }
   .search { display: flex; gap: 8px; align-items: center; }
   .search input { flex: 1; box-sizing: border-box; padding: 11px; font-size: 16px; border: 1px solid #c9bba8; border-radius: 8px; }
+  .combo-row { display: grid; grid-template-columns: 1fr 80px auto; gap: 8px; align-items: center; margin-top: 8px; }
+  .combo-row select, .combo-row input { box-sizing: border-box; width: 100%; padding: 10px; font-size: 15px; border: 1px solid #c9bba8; border-radius: 8px; background: #fff; }
   .offer-add { display: grid; grid-template-columns: 1fr 130px auto; gap: 8px; align-items: center; }
   .offer-add select, .offer-add input { box-sizing: border-box; width: 100%; padding: 10px; font-size: 15px; border: 1px solid #c9bba8; border-radius: 8px; background: #fff; }
   @media (max-width: 560px) { .offer-add { grid-template-columns: 1fr 1fr; } .offer-add select { grid-column: 1 / -1; } }
@@ -322,7 +324,7 @@ function build() {
 
   // One tab per area: Settings & hours, Delivery, then each venue's menu.
   const allItems = data.venues.flatMap(v => v.sections.flatMap(sec => sec.items));
-  const offerCount = allItems.filter(i => i.discount > 0).length;
+  const offerCount = allItems.filter(i => i.discount > 0).length + (data.bundles || []).length;
   const tabsDef = [["settings", "Settings & hours"], ["delivery", "Delivery"], ...data.venues.map(v => ["venue:" + v.key, v.key]), ["offers", offerCount ? `Special offers (${offerCount})` : "Special offers"]];
   if (!tabsDef.some(([id]) => id === adminTab)) adminTab = "settings";
   const tabBar = document.createElement("div");
@@ -473,8 +475,136 @@ function build() {
   const op = panels.offers;
   const intro = document.createElement("p");
   intro.className = "note";
-  intro.textContent = "Items with a discount show on the customer's Special offers tab. Change a discount here, or use Remove offer to take an item off.";
+  intro.textContent = "Everything here shows on the customer's Special offers tab: combo offers (several items for one price) and single items with a discount.";
   op.append(intro);
+
+  // Combo offers: several items sold together for one special price, with the saving shown to the customer.
+  data.bundles = data.bundles || [];
+  const itemLookup = Object.fromEntries(allItems.map(i => [i.id, i]));
+  const cur = data.settings.currency;
+  const regularOf = b => Math.round(b.items.reduce((s, r) => s + (itemLookup[r.id] ? finalPrice(itemLookup[r.id]) * r.qty : 0), 0) * 100) / 100;
+  const fillOptions = sel => {
+    for (const v of data.venues) {
+      const group = document.createElement("optgroup");
+      group.label = v.key;
+      for (const sec of v.sections) for (const it of sec.items) {
+        const o = document.createElement("option");
+        o.value = it.id; o.textContent = `${it.en || "(untitled)"} (${sec.en})`;
+        group.append(o);
+      }
+      if (group.children.length) sel.append(group);
+    }
+  };
+
+  const comboCard = b => {
+    const card = document.createElement("div");
+    card.className = "card";
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    const info = document.createElement("div");
+    info.className = "special wide";
+    const refreshInfo = () => {
+      const reg = regularOf(b), save = Math.round((reg - b.price) * 100) / 100;
+      info.textContent = !b.items.length ? "Add at least one item to this combo."
+        : save > 0 ? `The items cost ${cur}${reg.toFixed(2)} separately. Customers save ${cur}${save.toFixed(2)} (${Math.round(save / reg * 100)}%).`
+        : `The items cost ${cur}${reg.toFixed(2)} separately. The combo price is not lower, so customers save nothing.`;
+    };
+    const picField = field("Picture (emoji, or an image path like images/combo.jpg)", b, "pic", { wide: true });
+    const picInput = picField.querySelector("input");
+    const thumb = document.createElement("div");
+    thumb.className = "thumb";
+    const showThumb = () => {
+      thumb.innerHTML = "";
+      const p = b.pic || "";
+      if (/[\/.]/.test(p)) { const img = document.createElement("img"); img.src = previews[p] || p; img.alt = ""; thumb.append(img); } else thumb.textContent = p;
+    };
+    showThumb();
+    picInput.addEventListener("input", showThumb);
+    const up = document.createElement("input");
+    up.type = "file"; up.accept = "image/*"; up.hidden = true;
+    const upBtn = btn("Upload photo", "ghost", () => up.click());
+    up.onchange = async () => {
+      const file = up.files[0];
+      up.value = "";
+      if (!file) return;
+      upBtn.disabled = true; say("Uploading photo...");
+      try {
+        const { path, url } = await uploadPhoto(file, b);
+        previews[path] = url; b.pic = path; picInput.value = path;
+        dirty = true; showThumb();
+        say("Photo uploaded. Click Save changes to put it on the menu.", "ok");
+      } catch (e) { say(e.message, "err"); }
+      upBtn.disabled = false;
+    };
+    const photoRow = document.createElement("div");
+    photoRow.className = "row wide";
+    photoRow.append(thumb, upBtn, up);
+
+    const list = document.createElement("div");
+    list.className = "wide";
+    const renderRows = () => {
+      list.innerHTML = "";
+      b.items.forEach((r, i) => {
+        const row = document.createElement("div");
+        row.className = "combo-row";
+        const sel = document.createElement("select");
+        sel.setAttribute("aria-label", "Item in combo");
+        fillOptions(sel);
+        sel.value = r.id;
+        sel.onchange = () => { r.id = sel.value; dirty = true; say("Unsaved changes"); refreshInfo(); };
+        const qty = document.createElement("input");
+        qty.type = "number"; qty.min = 1; qty.step = 1; qty.value = r.qty;
+        qty.setAttribute("aria-label", "Quantity");
+        qty.oninput = () => { r.qty = Math.max(1, Math.floor(Number(qty.value)) || 1); dirty = true; say("Unsaved changes"); refreshInfo(); };
+        row.append(sel, qty, btn("Remove", "ghost", () => { b.items.splice(i, 1); dirty = true; say("Unsaved changes"); renderRows(); refreshInfo(); }));
+        list.append(row);
+      });
+    };
+    renderRows();
+    const addItem = btn("+ Add item to combo", "ghost", () => {
+      if (!allItems.length) return;
+      b.items.push({ id: allItems[0].id, qty: 1 }); dirty = true; say("Unsaved changes"); renderRows(); refreshInfo();
+    });
+    const itemsLabel = document.createElement("div");
+    itemsLabel.className = "wide";
+    itemsLabel.innerHTML = "<b>Items in this combo</b>";
+    refreshInfo();
+    card.addEventListener("edited", refreshInfo);
+
+    grid.append(
+      field("Combo title (English)", b, "en"),
+      field("Combo title (Arabic)", b, "ar", { dir: "rtl" }),
+      field("Description (English)", b, "dEn"),
+      field("Description (Arabic)", b, "dAr", { dir: "rtl" }),
+      field("Combo price", b, "price", { type: "number", min: 0, step: "0.01" }),
+      document.createElement("div"),
+      picField, photoRow, itemsLabel, list
+    );
+    const row = document.createElement("div");
+    row.className = "row";
+    row.append(addItem, checkbox("Mark as NEW", b, "isNew"), checkbox("Hide from menu", b, "hidden"), btn("Delete combo", "danger", () => {
+      if (!confirm(`Delete the combo "${b.en || "this combo"}"?`)) return;
+      data.bundles.splice(data.bundles.indexOf(b), 1); dirty = true; say("Unsaved changes"); build();
+    }));
+    card.append(grid, info, row);
+    return card;
+  };
+
+  const comboTitle = document.createElement("h3");
+  comboTitle.textContent = `Combo offers (${data.bundles.length})`;
+  const comboNote = document.createElement("p");
+  comboNote.className = "note";
+  comboNote.textContent = "A combo sells several items together for one price. Customers see what is inside and how much they save.";
+  op.append(comboTitle, comboNote);
+  for (const b of data.bundles) op.append(comboCard(b));
+  op.append(btn("+ New combo offer", "", () => {
+    data.bundles.push({ id: nextId(), en: "", ar: "", dEn: "", dAr: "", price: 0, pic: "🎁", isNew: true, hidden: false, items: [] });
+    dirty = true; say("Unsaved changes"); build();
+  }));
+  const singleTitle = document.createElement("h3");
+  singleTitle.textContent = "Single items with a discount";
+  singleTitle.style.marginTop = "28px";
+  op.append(singleTitle);
 
   const addBox = document.createElement("div");
   addBox.className = "card";
@@ -576,6 +706,14 @@ function validate() {
   for (const a of s.deliveryAreas) {
     if (!a.en.trim()) return "Every delivery area needs an English name.";
     if (!(a.fee >= 0)) return `Delivery area "${a.en}" has an invalid fee.`;
+  }
+  const known = new Set(data.venues.flatMap(v => v.sections.flatMap(sec => sec.items.map(i => i.id))));
+  for (const b of data.bundles || []) {
+    if (!b.en.trim()) return "Every combo offer needs an English title.";
+    if (!b.items.length) return `The combo "${b.en}" has no items.`;
+    if (!(b.price >= 0)) return `The combo "${b.en}" has an invalid price.`;
+    if (b.items.some(r => !known.has(r.id))) return `The combo "${b.en}" includes an item that no longer exists.`;
+    if (b.items.some(r => !(r.qty >= 1))) return `Every item in "${b.en}" needs a quantity of 1 or more.`;
   }
   for (const v of data.venues) for (const sec of v.sections) for (const it of sec.items) {
     if (!it.en.trim()) return `An item in "${sec.en}" has no English title.`;

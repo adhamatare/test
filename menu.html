@@ -54,6 +54,8 @@
   .send:disabled { background: #cfc4b6; cursor: not-allowed; }
   .secondary { background: #e8dfd3; color: #2b2118; }
   .close { background: none; border: 0; font-size: 15px; color: #6f5f4d; cursor: pointer; width: 100%; padding: 12px; }
+  .parts { display: block; color: #6f5f4d; font-size: 13px; margin-top: 2px; }
+  .saving { color: #1b7a43; font-weight: 600; }
   .ordno { font-size: 28px; font-weight: 800; letter-spacing: 2px; text-align: center; margin: 8px 0; }
   .center { text-align: center; }
 </style>
@@ -79,10 +81,10 @@ const OFFERS = "__offers";  // Virtual tab listing every discounted item.
 const DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 const UI = {
-  en: { title: "Our Menu", table: "Table", add: "Add", offers: "Special offers", new: "NEW", soldOut: "Sold out", cart: "View order", order: "Your order", tableNo: "Table number", name: "Your name", customer: "Customer", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", free: "Free", phone: "Phone number", address: "Delivery address", area: "Delivery area", pickArea: "Select your area", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", orderNo: "Order", lang: "العربية",
+  en: { title: "Our Menu", table: "Table", add: "Add", offers: "Special offers", combos: "Combo offers", save: "Save", youSave: "You save", unavailable: "Unavailable", includes: "Includes", new: "NEW", soldOut: "Sold out", cart: "View order", order: "Your order", tableNo: "Table number", name: "Your name", customer: "Customer", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", free: "Free", phone: "Phone number", address: "Delivery address", area: "Delivery area", pickArea: "Select your area", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", orderNo: "Order", lang: "العربية",
         closed: "We're closed right now", paused: "Online ordering is paused right now", todayHours: "Today's hours", closedToday: "Closed today", minOrder: "Minimum order for delivery is", badPhone: "Please enter a valid phone number", needArea: "Please select your delivery area",
         confirmTitle: "Almost done!", confirmText: "WhatsApp opened with your order. Press Send in WhatsApp to place it. Your order is NOT placed until you send the message.", openAgain: "Open WhatsApp again", sent: "I sent it", back: "Back to my order", thanks: "Thank you! We received your order message.", keep: "Keep this order number", done: "Done" },
-  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", offers: "العروض", new: "جديد", soldOut: "نفدت الكمية", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", name: "اسمك", customer: "العميل", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", free: "مجاني", phone: "رقم الهاتف", address: "عنوان التوصيل", area: "منطقة التوصيل", pickArea: "اختر منطقتك", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", orderNo: "الطلب", lang: "English",
+  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", offers: "العروض", combos: "عروض الكومبو", save: "وفّر", youSave: "وفّرت", unavailable: "غير متوفر", includes: "يشمل", new: "جديد", soldOut: "نفدت الكمية", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", name: "اسمك", customer: "العميل", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", free: "مجاني", phone: "رقم الهاتف", address: "عنوان التوصيل", area: "منطقة التوصيل", pickArea: "اختر منطقتك", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", orderNo: "الطلب", lang: "English",
         closed: "نحن مغلقون الآن", paused: "الطلب عبر الإنترنت متوقف مؤقتًا", todayHours: "ساعات اليوم", closedToday: "مغلق اليوم", minOrder: "الحد الأدنى لطلب التوصيل", badPhone: "يرجى إدخال رقم هاتف صحيح", needArea: "يرجى اختيار منطقة التوصيل",
         confirmTitle: "أوشكنا على الانتهاء!", confirmText: "فتح واتساب مع طلبك. اضغط إرسال في واتساب لتأكيد الطلب. لن يتم تسجيل طلبك حتى ترسل الرسالة.", openAgain: "افتح واتساب مرة أخرى", sent: "أرسلتها", back: "العودة إلى طلبي", thanks: "شكرًا لك! وصلتنا رسالة طلبك.", keep: "احتفظ برقم الطلب", done: "تم" }
 };
@@ -90,6 +92,7 @@ const UI = {
 // Menu content comes from menu.json (edited through admin.html).
 // Item: { id, en, ar, dEn, dAr, price, discount (percent), pic, isNew, soldOut, hidden }. pic is an emoji, or an image path/URL.
 let MENUS = {};
+let BUNDLES = [];   // Combo offers: { id, en, ar, dEn, dAr, price, pic, isNew, hidden, items: [{ id, qty }] }
 
 // ---- State ----
 const params = new URLSearchParams(location.search);
@@ -188,7 +191,18 @@ function sectionsFor(key) {
     .filter(s => s.items.length);
 }
 
-const hasOffers = () => sectionsFor(OFFERS).length > 0;
+// ---- Combo offers (several items for one special price) ----
+const itemById = {};
+const indexItems = () => { for (const m of Object.values(MENUS)) for (const s of m.sections) for (const it of s.items) itemById[it.id] = it; };
+const bundleLines = b => b.items.map(r => ({ it: itemById[r.id], qty: r.qty })).filter(x => x.it);
+const round2 = n => Math.round(n * 100) / 100;
+const bundleRegular = b => round2(bundleLines(b).reduce((s, x) => s + finalPrice(x.it) * x.qty, 0));   // what the items cost one by one
+const bundleSaving = b => Math.max(0, round2(bundleRegular(b) - b.price));
+const bundleAvailable = b => b.items.length > 0 && b.items.every(r => { const it = itemById[r.id]; return it && !it.hidden && !it.soldOut; });
+const bundleParts = (b, l) => bundleLines(b).map(x => `${l === "ar" ? fmtNum(x.qty) : x.qty} x ${l === "ar" && x.it.ar ? x.it.ar : x.it.en}`).join(l === "ar" ? "، " : ", ");
+const visibleBundles = () => BUNDLES.filter(b => !b.hidden);
+
+const hasOffers = () => sectionsFor(OFFERS).length > 0 || visibleBundles().length > 0;
 
 // ---- Cart (kept on this device so a refresh or a trip to WhatsApp doesn't lose it) ----
 function saveCart() {
@@ -205,6 +219,11 @@ function restoreCart() {
     const saved = JSON.parse(store.get("cart_v1") || "null");
     if (saved && Date.now() - saved.at < 6 * 3600e3) {
       for (const [id, v] of Object.entries(saved.items)) {
+        if (id.startsWith("b:")) {
+          const b = BUNDLES.find(x => "b:" + x.id === id);
+          if (b && !b.hidden && bundleAvailable(b)) cart[id] = { name: b.en, ar: b.ar || b.en, price: b.price, qty: v.qty, note: v.note };
+          continue;
+        }
         const it = byId[id];
         if (it && !it.hidden && !it.soldOut) cart[id] = { name: it.en, ar: it.ar, price: finalPrice(it), qty: v.qty, note: v.note };
       }
@@ -248,6 +267,7 @@ function render() {
 
   const menu = $("menu");
   menu.innerHTML = "";
+  if (tab === OFFERS) renderBundles(menu, open);
   for (const sec of sectionsFor(tab)) {
     const shown = sec.items.filter(it => !it.hidden);   // hidden items never reach customers
     if (!shown.length) continue;
@@ -307,6 +327,61 @@ function render() {
   if ($("sheet").style.display === "flex") renderSheet();
 }
 
+function renderBundles(menu, open) {
+  const list = visibleBundles();
+  if (!list.length) return;
+  const h = document.createElement("h2");
+  h.textContent = t("combos");
+  menu.appendChild(h);
+  for (const b of list) {
+    const id = "b:" + b.id;
+    const name = lang === "ar" && b.ar ? b.ar : b.en;
+    const desc = lang === "ar" ? b.dAr : b.dEn;
+    const avail = bundleAvailable(b), saving = bundleSaving(b), regular = bundleRegular(b);
+    const row = document.createElement("div");
+    row.className = "item" + (avail ? "" : " soldout");
+    const info = document.createElement("div");
+    info.className = "info";
+    info.textContent = name;
+    if (b.isNew) { const nb = document.createElement("span"); nb.className = "badge new"; nb.textContent = t("new"); info.appendChild(nb); }
+    if (saving > 0) { const sb = document.createElement("span"); sb.className = "badge off"; sb.textContent = `${t("save")} ${money(saving)}`; info.appendChild(sb); }
+    const parts = document.createElement("small");
+    parts.textContent = `${t("includes")}: ${bundleParts(b, lang)}`;
+    info.appendChild(parts);
+    if (desc) { const s = document.createElement("small"); s.textContent = desc; info.appendChild(s); }
+    const buy = document.createElement("div");
+    buy.className = "buy";
+    const p = document.createElement("div");
+    p.className = "price";
+    if (saving > 0) { const old = document.createElement("s"); old.className = "was"; old.textContent = money(regular); p.appendChild(old); }
+    p.appendChild(document.createTextNode(money(b.price)));
+    buy.appendChild(p);
+    const qty = cart[id] ? cart[id].qty : 0;
+    if (!avail || (!open && !qty)) {
+      const a = document.createElement("button");
+      a.className = "add"; a.textContent = t("add"); a.disabled = true;
+      buy.appendChild(a);
+    } else if (qty) {
+      const q = document.createElement("div");
+      q.className = "qty";
+      const minus = document.createElement("button"); minus.textContent = "−"; minus.setAttribute("aria-label", "-"); minus.onclick = () => change(id, b.en, b.price, -1, b.ar || b.en);
+      const n = document.createElement("span"); n.textContent = fmtNum(qty);
+      const plus = document.createElement("button"); plus.textContent = "+"; plus.setAttribute("aria-label", "+"); plus.onclick = () => change(id, b.en, b.price, 1, b.ar || b.en);
+      q.append(minus, n, plus);
+      buy.appendChild(q);
+    } else {
+      const a = document.createElement("button");
+      a.className = "add"; a.textContent = t("add");
+      a.onclick = () => change(id, b.en, b.price, 1, b.ar || b.en);
+      buy.appendChild(a);
+    }
+    const pc = picture(b.pic || "🎁");
+    if (!avail) { const ov = document.createElement("span"); ov.className = "ovl"; ov.textContent = t("unavailable"); pc.appendChild(ov); }
+    row.append(pc, info, buy);
+    menu.appendChild(row);
+  }
+}
+
 function renderSheet() {
   if (view === "confirm" && pending) return renderConfirm();
   if (view === "done" && pending) return renderDone();
@@ -334,7 +409,12 @@ function renderSheet() {
     note.placeholder = t("itemNote");
     note.value = l.note || "";
     note.oninput = () => { l.note = note.value; saveCart(); };
-    line.append(top, note);
+    line.append(top);
+    if (id.startsWith("b:")) {   // a combo: say what is in it
+      const b = BUNDLES.find(x => "b:" + x.id === id);
+      if (b) { const sub = document.createElement("small"); sub.className = "parts"; sub.textContent = bundleParts(b, lang); line.append(sub); }
+    }
+    line.append(note);
     panel.appendChild(line);
   }
   if (count) {
@@ -398,7 +478,20 @@ function renderSheet() {
     const send = document.createElement("button"); send.className = "send"; send.textContent = t("send");
     send.disabled = notes.length > 0;
     send.onclick = sendOrder;
-    panel.append(types, ...fields, ni, ...(feeRow ? [feeRow] : []), tot);
+    // How much the customer saves through combo offers
+    let saved = 0;
+    for (const [id, l] of Object.entries(cart)) {
+      const b = id.startsWith("b:") ? BUNDLES.find(x => "b:" + x.id === id) : null;
+      if (b) saved += bundleSaving(b) * l.qty;
+    }
+    saved = round2(saved);
+    let saveRow = null;
+    if (saved > 0) {
+      saveRow = document.createElement("div"); saveRow.className = "linetop saving"; saveRow.style.padding = "8px 0";
+      saveRow.innerHTML = "<span></span><span></span>";
+      saveRow.children[0].textContent = t("youSave"); saveRow.children[1].textContent = money(saved);
+    }
+    panel.append(types, ...fields, ni, ...(feeRow ? [feeRow] : []), ...(saveRow ? [saveRow] : []), tot);
     for (const text of notes) { const w = document.createElement("div"); w.className = "warn"; w.textContent = text; panel.appendChild(w); }
     panel.appendChild(send);
   }
@@ -441,10 +534,14 @@ function sendOrder() {
     if (area) lines.push(`${UI.en.area}: ${area.en}`);
     lines.push(`${UI.en.address}: ${order.address.trim()}`);
   }
-  for (const l of Object.values(cart)) {
+  let saved = 0;
+  for (const [cid, l] of Object.entries(cart)) {
     lines.push(`${l.qty} x ${l.name} - ${CURRENCY.en}${(l.qty * l.price).toFixed(2)}`);
+    const b = cid.startsWith("b:") ? BUNDLES.find(x => "b:" + x.id === cid) : null;
+    if (b) { lines.push(`   (${bundleParts(b, "en")})`); saved += bundleSaving(b) * l.qty; }
     if (l.note && l.note.trim()) lines.push(`   > ${l.note.trim()}`);
   }
+  if (saved > 0) lines.push(`${UI.en.youSave}: ${CURRENCY.en}${round2(saved).toFixed(2)}`);
   if (order.type === "delivery") lines.push(`${UI.en.fee}: ${fee ? CURRENCY.en + fee.toFixed(2) : UI.en.free}`);
   lines.push(`${UI.en.total}: ${CURRENCY.en}${(sum + fee).toFixed(2)}`);
   if (order.note.trim()) lines.push(`${UI.en.note.replace(" (optional)", "")}: ${order.note.trim()}`);
@@ -500,6 +597,8 @@ async function init() {
     WHATSAPP_NUMBER = SETTINGS.whatsapp || "";
     CURRENCY = { en: SETTINGS.currency || "$", ar: SETTINGS.currency || "$" };
     MENUS = Object.fromEntries(data.venues.map(v => [v.key, v]));
+    BUNDLES = Array.isArray(data.bundles) ? data.bundles : [];
+    indexItems();
   } catch (e) {
     $("menu").textContent = "Could not load the menu. Please refresh.";
     return;
