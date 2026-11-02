@@ -79,18 +79,6 @@
               "pic": "🥗",
               "isNew": false,
               "soldOut": false
-            },
-            {
-              "id": "i3",
-              "en": "Hummus Plate",
-              "ar": "طبق حمص",
-              "dEn": "With warm pita",
-              "dAr": "مع خبز بلدي ساخن",
-              "price": 5.5,
-              "discount": 0,
-              "pic": "images/i3-mvyktvvh.jpg",
-              "isNew": false,
-              "soldOut": true
             }
           ]
         },
