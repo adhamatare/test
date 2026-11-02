@@ -66,7 +66,7 @@
               "discount": 0,
               "pic": "🍲",
               "isNew": true,
-              "soldOut": true
+              "soldOut": false
             },
             {
               "id": "i2",
@@ -78,7 +78,7 @@
               "discount": 0,
               "pic": "🥗",
               "isNew": true,
-              "soldOut": true
+              "soldOut": false
             },
             {
               "id": "i3",
@@ -195,29 +195,6 @@
               "isNew": false
             },
             {
-              "id": "i11",
-              "en": "Cappuccino",
-              "ar": "كابتشينو",
-              "dEn": "Steamed milk foam",
-              "dAr": "رغوة حليب",
-              "price": 3.5,
-              "discount": 0,
-              "pic": "☕",
-              "isNew": false,
-              "soldOut": true
-            },
-            {
-              "id": "i12",
-              "en": "Latte",
-              "ar": "لاتيه",
-              "dEn": "Smooth and milky",
-              "dAr": "ناعم بالحليب",
-              "price": 3.8,
-              "discount": 10,
-              "pic": "🥛",
-              "isNew": false
-            },
-            {
               "id": "i13",
               "en": "Hot Chocolate",
               "ar": "شوكولاتة ساخنة",
@@ -315,7 +292,8 @@
               "price": 3.5,
               "discount": 0,
               "pic": "🍞",
-              "isNew": false
+              "isNew": false,
+              "soldOut": true
             }
           ]
         }
