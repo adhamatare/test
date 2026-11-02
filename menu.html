@@ -56,10 +56,11 @@
 // ---- Settings ----
 const WHATSAPP_NUMBER = "972522866414";   // Counter/kitchen WhatsApp, digits only with country code, e.g. "201001234567". Empty = user picks the contact.
 const CURRENCY = { en: "$", ar: "$" };
+const DELIVERY_FEE = 3;       // Added to the total for delivery orders. Set to 0 for free delivery.
 
 const UI = {
-  en: { title: "Our Menu", table: "Table", add: "Add", cart: "View order", order: "Your order", tableNo: "Table number", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", phone: "Phone number", address: "Delivery address", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", lang: "العربية" },
-  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", phone: "رقم الهاتف", address: "عنوان التوصيل", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", lang: "English" }
+  en: { title: "Our Menu", table: "Table", add: "Add", cart: "View order", order: "Your order", tableNo: "Table number", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", phone: "Phone number", address: "Delivery address", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", lang: "العربية" },
+  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", phone: "رقم الهاتف", address: "عنوان التوصيل", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", lang: "English" }
 };
 
 // Item: [English name, Arabic name, English description, Arabic description, price, picture]
@@ -242,7 +243,14 @@ function renderSheet() {
   if (count) {
     const tot = document.createElement("div"); tot.className = "total";
     tot.innerHTML = "<span></span><span></span>";
-    tot.children[0].textContent = t("total"); tot.children[1].textContent = money(sum);
+    const fee = order.type === "delivery" ? DELIVERY_FEE : 0;
+    tot.children[0].textContent = t("total"); tot.children[1].textContent = money(sum + fee);
+    let feeRow = null;
+    if (fee) {
+      feeRow = document.createElement("div"); feeRow.className = "linetop"; feeRow.style.padding = "8px 0";
+      feeRow.innerHTML = "<span></span><span></span>";
+      feeRow.children[0].textContent = t("fee"); feeRow.children[1].textContent = money(fee);
+    }
     const types = document.createElement("div"); types.className = "types";
     for (const key of ["dinein", "takeaway", "delivery"]) {
       const b = document.createElement("button");
@@ -269,7 +277,7 @@ function renderSheet() {
     ni.oninput = () => { order.note = ni.value; };
     const send = document.createElement("button"); send.className = "send"; send.textContent = t("send");
     send.onclick = sendOrder;
-    panel.append(types, ...fields, ni, tot, send);
+    panel.append(types, ...fields, ni, ...(feeRow ? [feeRow] : []), tot, send);
   }
   const close = document.createElement("button"); close.className = "close"; close.textContent = t("close");
   close.onclick = () => { $("sheet").style.display = "none"; };
@@ -294,7 +302,9 @@ function sendOrder() {
     lines.push(`${l.qty} x ${l.name} - ${CURRENCY.en}${(l.qty * l.price).toFixed(2)}`);
     if (l.note && l.note.trim()) lines.push(`   > ${l.note.trim()}`);
   }
-  lines.push(`${UI.en.total}: ${CURRENCY.en}${sum.toFixed(2)}`);
+  const fee = order.type === "delivery" ? DELIVERY_FEE : 0;
+  if (fee) lines.push(`${UI.en.fee}: ${CURRENCY.en}${fee.toFixed(2)}`);
+  lines.push(`${UI.en.total}: ${CURRENCY.en}${(sum + fee).toFixed(2)}`);
   if (note) lines.push(`${UI.en.note.replace(" (optional)", "")}: ${note}`);
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`;
   window.open(url, "_blank");
