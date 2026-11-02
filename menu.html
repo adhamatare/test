@@ -21,7 +21,9 @@
   .info { flex: 1; }
   .info small { display: block; color: #7a6a58; }
   .price { white-space: nowrap; font-weight: 600; }
-  .soldout .pic, .soldout .info { opacity: .45; }
+  .soldout .pic { opacity: .45; }
+  .soldout .info { color: #9a8a78; }
+  .badge.out { background: #5b4a3a; }
   .sold { padding: 4px 10px; border-radius: 8px; background: #e8dfd3; color: #7a6a58; font-size: 13px; font-weight: 600; }
   .was { display: block; color: #9a8a78; font-weight: 400; font-size: 13px; }
   .badge { display: inline-block; margin-inline-start: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #fff; vertical-align: middle; }
@@ -167,6 +169,7 @@ function render() {
       const info = document.createElement("div");
       info.className = "info";
       info.textContent = name;
+      if (it.soldOut) { const ob = document.createElement("span"); ob.className = "badge out"; ob.textContent = t("soldOut"); info.appendChild(ob); }
       if (it.isNew) { const nb = document.createElement("span"); nb.className = "badge new"; nb.textContent = t("new"); info.appendChild(nb); }
       if (it.discount > 0) { const db = document.createElement("span"); db.className = "badge off"; db.textContent = `-${fmtNum(it.discount)}%`; info.appendChild(db); }
       if (desc) { const s = document.createElement("small"); s.textContent = desc; info.appendChild(s); }
