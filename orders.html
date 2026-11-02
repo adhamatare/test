@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Orders</title>
+<style>
+  body { font-family: system-ui, "Segoe UI", Tahoma, sans-serif; margin: 0; background: #faf7f2; color: #2b2118; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 16px; background: #6b3f1d; color: #fff; }
+  header h1 { margin: 0; font-size: 20px; }
+  header button { border: 1px solid #fff8; border-radius: 8px; background: none; color: #fff; padding: 6px 12px; cursor: pointer; }
+  main { max-width: 760px; margin: 0 auto; padding: 12px 16px 60px; }
+  #login { max-width: 360px; margin: 48px auto; padding: 0 16px; }
+  #login input { width: 100%; box-sizing: border-box; padding: 12px; margin: 6px 0; font-size: 16px; border: 1px solid #c9bba8; border-radius: 8px; }
+  .btn { width: 100%; padding: 12px; border: 0; border-radius: 10px; background: #1b8f49; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+  .err { color: #8e2a20; min-height: 1.3em; margin: 6px 0; }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 12px; }
+  .filters button { padding: 8px 14px; border: 0; border-radius: 999px; background: #e8dfd3; font-size: 14px; cursor: pointer; }
+  .filters button.on { background: #6b3f1d; color: #fff; }
+  .card { background: #fff; border: 1px solid #c9bba8; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+  .card.s-open { border-left: 6px solid #c0392b; }
+  .card.s-picked { border-left: 6px solid #d68910; }
+  .card.s-in_progress { border-left: 6px solid #2e86c1; }
+  .card.s-ready { border-left: 6px solid #1b8f49; }
+  .top { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; }
+  .muted { color: #6f5f4d; font-size: 13px; }
+  ul { margin: 8px 0; padding-inline-start: 18px; }
+  li small { display: block; color: #6f5f4d; }
+  .steps { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .steps button { flex: 1 1 auto; padding: 10px 8px; border: 1px solid #c9bba8; border-radius: 8px; background: #fff; font-size: 14px; cursor: pointer; min-width: 90px; }
+  .steps button.cur { background: #6b3f1d; color: #fff; border-color: #6b3f1d; }
+  .steps button.cancel { color: #8e2a20; }
+  .steps button:disabled { opacity: .6; cursor: wait; }
+  .empty { text-align: center; color: #6f5f4d; margin: 40px 0; }
+</style>
+</head>
+<body>
+<header><h1>Orders</h1><button id="out" hidden>Sign out</button></header>
+
+<form id="login">
+  <h2>Staff sign in</h2>
+  <input id="u" placeholder="Username" autocomplete="username" required>
+  <input id="p" type="password" placeholder="Password" autocomplete="current-password" required>
+  <div class="err" id="loginErr"></div>
+  <button class="btn" type="submit">Sign in</button>
+</form>
+
+<main id="app" hidden>
+  <div class="filters" id="filters"></div>
+  <div id="list"></div>
+  <p class="muted" id="stamp"></p>
+</main>
+
+<script>
+// Address of the backend: ?api=... once, then remembered on this device.
+const params = new URLSearchParams(location.search);
+const mem = {
+  get(k, s) { try { return (s ? sessionStorage : localStorage).getItem(k); } catch { return null; } },
+  set(k, v, s) { try { (s ? sessionStorage : localStorage).setItem(k, v); } catch {} },
+  del(k, s) { try { (s ? sessionStorage : localStorage).removeItem(k); } catch {} }
+};
+if (params.get("api")) mem.set("ordersApi", params.get("api").replace(/\/+$/, ""));
+const API = mem.get("ordersApi") || "http://localhost:3000";
+
+const STATUS = [["open", "Open"], ["picked", "Picked"], ["in_progress", "In progress"], ["ready", "Ready"], ["completed", "Completed"]];
+const NAMES = Object.fromEntries([...STATUS, ["cancelled", "Cancelled"]]);
+const TYPES = { dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery" };
+const FILTERS = [["active", "Active"], ["completed", "Completed"], ["cancelled", "Cancelled"], ["all", "All"]];
+
+let token = mem.get("ordersToken", true);   // kept only while this tab is open
+let filter = "active", orders = [], busy = new Set();
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const money = n => Number(n).toFixed(2);
+
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, { ...opts, headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) } });
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 401 && token) { signedOut("Please sign in again."); throw new Error("signed out"); }
+  if (!res.ok) throw new Error(body.error || "Something went wrong");
+  return body;
+}
+
+function signedOut(msg = "") {
+  token = null; mem.del("ordersToken", true);
+  $("login").hidden = false; $("app").hidden = true; $("out").hidden = true;
+  $("loginErr").textContent = msg;
+}
+
+$("login").onsubmit = async e => {
+  e.preventDefault();
+  $("loginErr").textContent = "";
+  try {
+    const s = await api("/api/auth/login", { method: "POST", body: JSON.stringify({ username: $("u").value, password: $("p").value }) });
+    token = s.token; mem.set("ordersToken", token, true);
+    $("p").value = "";
+    start();
+  } catch (err) {
+    $("loginErr").textContent = err.message === "Failed to fetch" ? "Cannot reach the server." : err.message;
+  }
+};
+
+$("out").onclick = async () => { try { await api("/api/auth/logout", { method: "POST" }); } catch {} signedOut(); };
+
+function start() {
+  $("login").hidden = true; $("app").hidden = false; $("out").hidden = false;
+  load();
+}
+
+async function load() {
+  if (!token) return;
+  try {
+    orders = await api("/api/orders");
+    $("stamp").textContent = "Updated " + new Date().toLocaleTimeString();
+    render();
+  } catch (e) { if (e.message !== "signed out") $("stamp").textContent = "Cannot reach the server. Retrying..."; }
+}
+
+const isActive = o => ["open", "picked", "in_progress", "ready"].includes(o.status);
+const shown = () => orders.filter(o => filter === "all" || (filter === "active" ? isActive(o) : o.status === filter))
+  .sort((a, b) => filter === "active" ? new Date(a.created_at) - new Date(b.created_at) : new Date(b.created_at) - new Date(a.created_at));
+
+function render() {
+  const f = $("filters"); f.innerHTML = "";
+  for (const [key, label] of FILTERS) {
+    const n = orders.filter(o => key === "all" || (key === "active" ? isActive(o) : o.status === key)).length;
+    const b = el("button", key === filter ? "on" : "", `${label} (${n})`);
+    b.onclick = () => { filter = key; render(); };
+    f.appendChild(b);
+  }
+  const list = $("list"); list.innerHTML = "";
+  const rows = shown();
+  if (!rows.length) list.appendChild(el("div", "empty", "No orders here."));
+  for (const o of rows) list.appendChild(card(o));
+}
+
+function card(o) {
+  const c = el("div", "card s-" + o.status);
+  const top = el("div", "top");
+  top.append(el("span", "", `#${o.number} - ${o.customer}`), el("span", "", "$" + money(o.total)));
+  const when = new Date(o.created_at);
+  const where = o.type === "dinein" ? ` - table ${o.table_no}` : o.type === "delivery" ? ` - ${o.phone}` : "";
+  c.append(top, el("div", "muted", `${TYPES[o.type]}${where} - ${when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${NAMES[o.status]}`));
+  if (o.type === "delivery") c.append(el("div", "muted", [o.area, o.address].filter(Boolean).join(", ")));
+  const ul = el("ul");
+  for (const i of o.items) {
+    const li = el("li", "", `${i.qty} x ${i.name}`);
+    if (i.parts) li.append(el("small", "", i.parts));
+    if (i.note) li.append(el("small", "", "> " + i.note));
+    ul.appendChild(li);
+  }
+  c.appendChild(ul);
+  if (o.note) c.append(el("div", "muted", "Note: " + o.note));
+  const steps = el("div", "steps");
+  for (const [key, label] of [...STATUS, ["cancelled", "Cancel"]]) {
+    const b = el("button", (key === o.status ? "cur " : "") + (key === "cancelled" ? "cancel" : ""), label);
+    b.disabled = busy.has(o.number);
+    b.onclick = () => setStatus(o, key);
+    steps.appendChild(b);
+  }
+  c.appendChild(steps);
+  return c;
+}
+
+async function setStatus(o, status) {
+  if (o.status === status) return;
+  if (status === "cancelled" && !confirm(`Cancel order #${o.number}?`)) return;
+  busy.add(o.number); render();
+  try {
+    await api(`/api/orders/${o.number}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
+    o.status = status;
+  } catch (e) { if (e.message !== "signed out") alert(e.message); }
+  busy.delete(o.number); render();
+}
+
+setInterval(load, 10000);
+if (token) start();
+</script>
+</body>
+</html>

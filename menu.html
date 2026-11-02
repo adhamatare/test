@@ -12,6 +12,14 @@
   #table { color: #6f5f4d; font-size: 14px; margin-top: 4px; }
   #banner { display: none; margin: 12px 16px 0; padding: 10px 14px; border-radius: 10px; background: #fdecea; color: #8e2a20; text-align: center; font-weight: 600; }
   #banner small { display: block; font-weight: 400; margin-top: 2px; }
+  #track { display: none; margin: 12px 16px 0; padding: 12px 14px; border-radius: 10px; background: #fff; border: 1px solid #c9bba8; }
+  #track .tt { display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+  #track .x { border: 0; background: none; font-size: 20px; line-height: 1; cursor: pointer; color: #6f5f4d; padding: 0 4px; }
+  #track ol { list-style: none; display: flex; gap: 4px; margin: 10px 0 0; padding: 0; }
+  #track li { flex: 1; text-align: center; font-size: 12px; padding: 6px 2px; border-radius: 8px; background: #efe5d6; color: #8a7a68; }
+  #track li.done { background: #d8ecdf; color: #1b7a43; }
+  #track li.now { background: #1b8f49; color: #fff; font-weight: 700; }
+  #track.cancelled { border-color: #c0392b; background: #fdecea; color: #8e2a20; }
   nav { display: flex; gap: 8px; justify-content: center; padding: 16px; flex-wrap: wrap; }
   nav button { padding: 10px 20px; border: 0; border-radius: 999px; background: #e8dfd3; font-size: 16px; cursor: pointer; }
   nav button.active { background: #6b3f1d; color: #fff; }
@@ -67,6 +75,7 @@
   <div id="table"></div>
 </header>
 <div id="banner"></div>
+<div id="track"></div>
 <nav id="tabs"></nav>
 <main id="menu"></main>
 <div id="bar"><span id="barCount"></span><span id="barTotal"></span></div>
@@ -83,10 +92,12 @@ const DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 const UI = {
   en: { title: "Our Menu", table: "Table", add: "Add", offers: "Special offers", combos: "Combo offers", save: "Save", youSave: "You save", unavailable: "Unavailable", includes: "Includes", new: "NEW", soldOut: "Sold out", cart: "View order", order: "Your order", tableNo: "Table number", name: "Your name", customer: "Customer", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", free: "Free", phone: "Phone number", address: "Delivery address", area: "Delivery area", pickArea: "Select your area", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", orderNo: "Order", lang: "العربية",
         closed: "We're closed right now", paused: "Online ordering is paused right now", todayHours: "Today's hours", closedToday: "Closed today", minOrder: "Minimum order for delivery is", badPhone: "Please enter a valid phone number", needArea: "Please select your delivery area",
-        confirmTitle: "Almost done!", confirmText: "WhatsApp opened with your order. Press Send in WhatsApp to place it. Your order is NOT placed until you send the message.", openAgain: "Open WhatsApp again", sent: "I sent it", back: "Back to my order", thanks: "Thank you! We received your order message.", keep: "Keep this order number", done: "Done" },
+        confirmTitle: "Almost done!", confirmText: "WhatsApp opened with your order. Press Send in WhatsApp to place it. Your order is NOT placed until you send the message.", openAgain: "Open WhatsApp again", sent: "I sent it", back: "Back to my order", thanks: "Thank you! We received your order message.", keep: "Keep this order number", done: "Done", trackTitle: "Order status", hide: "Hide",
+        st: { open: "Open", picked: "Picked", in_progress: "In progress", ready: { takeaway: "Ready for pickup", dinein: "Ready to serve", delivery: "Ready for delivery" }, completed: "Completed", cancelled: "Cancelled" } },
   ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", offers: "العروض", combos: "عروض الكومبو", save: "وفّر", youSave: "وفّرت", unavailable: "غير متوفر", includes: "يشمل", new: "جديد", soldOut: "نفدت الكمية", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", name: "اسمك", customer: "العميل", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", free: "مجاني", phone: "رقم الهاتف", address: "عنوان التوصيل", area: "منطقة التوصيل", pickArea: "اختر منطقتك", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", orderNo: "الطلب", lang: "English",
         closed: "نحن مغلقون الآن", paused: "الطلب عبر الإنترنت متوقف مؤقتًا", todayHours: "ساعات اليوم", closedToday: "مغلق اليوم", minOrder: "الحد الأدنى لطلب التوصيل", badPhone: "يرجى إدخال رقم هاتف صحيح", needArea: "يرجى اختيار منطقة التوصيل",
-        confirmTitle: "أوشكنا على الانتهاء!", confirmText: "فتح واتساب مع طلبك. اضغط إرسال في واتساب لتأكيد الطلب. لن يتم تسجيل طلبك حتى ترسل الرسالة.", openAgain: "افتح واتساب مرة أخرى", sent: "أرسلتها", back: "العودة إلى طلبي", thanks: "شكرًا لك! وصلتنا رسالة طلبك.", keep: "احتفظ برقم الطلب", done: "تم" }
+        confirmTitle: "أوشكنا على الانتهاء!", confirmText: "فتح واتساب مع طلبك. اضغط إرسال في واتساب لتأكيد الطلب. لن يتم تسجيل طلبك حتى ترسل الرسالة.", openAgain: "افتح واتساب مرة أخرى", sent: "أرسلتها", back: "العودة إلى طلبي", thanks: "شكرًا لك! وصلتنا رسالة طلبك.", keep: "احتفظ برقم الطلب", done: "تم", trackTitle: "حالة الطلب", hide: "إخفاء",
+        st: { open: "مفتوح", picked: "تم الاستلام", in_progress: "قيد التحضير", ready: { takeaway: "جاهز للاستلام", dinein: "جاهز للتقديم", delivery: "جاهز للتوصيل" }, completed: "مكتمل", cancelled: "ملغي" } }
 };
 
 // Menu content comes from menu.json (edited through admin.html).
@@ -238,6 +249,65 @@ function restoreCart() {
   } catch {}
 }
 
+// ---- Order status (only for orders saved on the backend) ----
+const STEPS = ["open", "picked", "in_progress", "ready", "completed"];
+let track = null;   // { id, token, api, type, status, at }
+try { track = JSON.parse(store.get("track_v1") || "null"); } catch {}
+if (track && Date.now() - track.at > 12 * 3600e3) { track = null; store.del("track_v1"); }
+
+function startTrack(saved) {
+  track = { id: saved.id, token: saved.token, api: API_URL, type: order.type, status: "open", at: Date.now() };
+  store.set("track_v1", JSON.stringify(track));
+  renderTrack();
+}
+
+function dropTrack() { track = null; store.del("track_v1"); renderTrack(); }
+
+async function pollTrack() {
+  if (!track || track.status === "completed" || track.status === "cancelled") return;
+  try {
+    const r = await fetch(`${track.api}/api/orders/${track.id}/status?t=${encodeURIComponent(track.token)}`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
+    if (r.status === 404) return dropTrack();
+    if (!r.ok) return;
+    const s = await r.json();
+    if (s.status !== track.status) { track.status = s.status; track.type = s.type; store.set("track_v1", JSON.stringify(track)); renderTrack(); }
+  } catch {}   // offline or server asleep: keep showing the last known status
+}
+
+const stepLabel = (key) => { const v = UI[lang].st[key]; return typeof v === "object" ? v[track.type] || v.takeaway : v; };
+
+function renderTrack() {
+  const box = $("track");
+  if (!track) { box.style.display = "none"; return; }
+  box.style.display = "block";
+  box.className = track.status === "cancelled" ? "cancelled" : "";
+  box.innerHTML = "";
+  const top = document.createElement("div"); top.className = "tt";
+  const title = document.createElement("span");
+  title.textContent = `${t("trackTitle")} - ${t("orderNo")} #${track.id}`;
+  top.appendChild(title);
+  if (track.status === "completed" || track.status === "cancelled") {
+    const x = document.createElement("button"); x.className = "x"; x.textContent = "×"; x.setAttribute("aria-label", t("hide")); x.onclick = dropTrack;
+    top.appendChild(x);
+  }
+  box.appendChild(top);
+  if (track.status === "cancelled") {
+    const c = document.createElement("div"); c.style.marginTop = "6px"; c.textContent = stepLabel("cancelled");
+    box.appendChild(c);
+    return;
+  }
+  const ol = document.createElement("ol");
+  const at = STEPS.indexOf(track.status);
+  STEPS.forEach((key, i) => {
+    const li = document.createElement("li");
+    li.textContent = stepLabel(key);
+    li.className = i < at ? "done" : i === at ? "now" : "";
+    if (i === at) li.setAttribute("aria-current", "step");
+    ol.appendChild(li);
+  });
+  box.appendChild(ol);
+}
+
 function change(id, name, price, delta, ar) {
   const l = cart[id] || (cart[id] = { name, ar, price, qty: 0 });
   l.qty += delta;
@@ -256,6 +326,7 @@ function render() {
   $("lang").textContent = t("lang");
   $("table").textContent = tableNo ? `${t("table")} ${tableNo}` : "";
   renderBanner();
+  renderTrack();
   const open = wasOpen;
 
   $("tabs").innerHTML = "";
@@ -518,7 +589,7 @@ function flagBad(selector) {
   if (el) { el.classList.add("bad"); el.focus(); }
 }
 
-// Saves the order on the backend. Returns its number, "" if the server is unreachable (the order then goes by WhatsApp only),
+// Saves the order on the backend. Returns { id, token }, null if the server is unreachable (the order then goes by WhatsApp only),
 // or throws an Error with a message when the server refuses the order.
 async function saveOrderOnServer() {
   const ctl = new AbortController();
@@ -533,11 +604,11 @@ async function saveOrderOnServer() {
       }),
     });
     const out = await res.json().catch(() => ({}));
-    if (res.ok && out.number) return String(out.number);
+    if (res.ok && out.number) return { id: String(out.number), token: out.token };
     if (res.status >= 400 && res.status < 500) throw new Error(out.error || "The order could not be saved");
-    return "";
+    return null;
   } catch (e) {
-    if (e.name === "AbortError" || e instanceof TypeError) return "";   // offline or timed out
+    if (e.name === "AbortError" || e instanceof TypeError) return null;   // offline or timed out
     throw e;
   } finally {
     clearTimeout(timer);
@@ -557,12 +628,13 @@ async function sendOrder() {
     if (!order.address.trim()) return flagBad('#panel [data-field="address"]');
   }
   let id = newOrderId();
-  let win = null;
+  let win = null, stored = null;
   if (API_URL) {
     win = window.open("", "_blank");   // opened now, filled in later, so the popup blocker still allows it
     sending = true; sendError = ""; renderSheet();
     try {
-      id = (await saveOrderOnServer()) || id;
+      stored = await saveOrderOnServer();
+      if (stored) id = stored.id;
     } catch (e) {
       if (win) win.close();
       sending = false; sendError = e.message; renderSheet();
@@ -594,6 +666,7 @@ async function sendOrder() {
   pending = { id, url };
   view = "confirm";
   saveCart();
+  if (stored) startTrack(stored);
   if (win) win.location.href = url; else window.open(url, "_blank");
   renderSheet();
 }
@@ -663,6 +736,7 @@ async function init() {
   render();
   if (view === "confirm") { $("sheet").style.display = "flex"; renderSheet(); }   // coming back from WhatsApp
   setInterval(() => { if (openStatus().open !== wasOpen) render(); }, 30000);       // opening or closing time passed
+  pollTrack(); setInterval(pollTrack, 15000);                                       // order status from the kitchen
 }
 init();
 </script>

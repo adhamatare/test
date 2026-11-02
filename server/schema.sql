@@ -73,7 +73,7 @@ CREATE SEQUENCE IF NOT EXISTS order_number_seq START 100001;
 CREATE TABLE IF NOT EXISTS orders (
   id           serial PRIMARY KEY,
   number       int  NOT NULL UNIQUE DEFAULT nextval('order_number_seq'),
-  status       text NOT NULL DEFAULT 'new' CHECK (status IN ('new','preparing','ready','done','cancelled')),
+  status       text NOT NULL DEFAULT 'open',
   type         text NOT NULL CHECK (type IN ('dinein','takeaway','delivery')),
   customer     text NOT NULL,
   table_no     text NOT NULL DEFAULT '',
@@ -87,6 +87,17 @@ CREATE TABLE IF NOT EXISTS orders (
   total        numeric(10,2) NOT NULL,
   created_at   timestamptz NOT NULL DEFAULT now()
 );
+-- Order status: open > picked > in_progress > ready > completed (or cancelled).
+-- This block also upgrades databases created with the first set of status names.
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
+UPDATE orders SET status = CASE status WHEN 'new' THEN 'open' WHEN 'preparing' THEN 'in_progress' WHEN 'done' THEN 'completed' END
+ WHERE status IN ('new', 'preparing', 'done');
+ALTER TABLE orders ALTER COLUMN status SET DEFAULT 'open';
+ALTER TABLE orders ADD CONSTRAINT orders_status_check CHECK (status IN ('open','picked','in_progress','ready','completed','cancelled'));
+
+-- Secret the customer's browser holds, so only they can look up their order's status.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS track_token text NOT NULL DEFAULT replace(gen_random_uuid()::text, '-', '');
+
 CREATE INDEX IF NOT EXISTS orders_status_idx ON orders(status, created_at);
 
 CREATE TABLE IF NOT EXISTS order_items (

@@ -3,7 +3,7 @@ import { loadMenu } from "./menu.js";
 
 const DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 const TYPES = ["dinein", "takeaway", "delivery"];
-export const STATUSES = ["new", "preparing", "ready", "done", "cancelled"];
+export const STATUSES = ["open", "picked", "in_progress", "ready", "completed", "cancelled"];
 
 const round2 = n => Math.round(n * 100) / 100;
 const finalPrice = it => Math.round(it.price * (100 - (it.discount || 0))) / 100;
@@ -113,7 +113,7 @@ export async function saveOrder(priced) {
     await client.query("BEGIN");
     const { rows } = await client.query(
       `INSERT INTO orders (type, customer, table_no, phone, address, area, note, subtotal, delivery_fee, savings, total)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id, number, status, total, created_at`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id, number, status, total, created_at, track_token`,
       [priced.type, priced.customer, priced.table_no, priced.phone, priced.address, priced.area, priced.note,
        priced.subtotal, priced.delivery_fee, priced.savings, priced.total]);
     const order = rows[0];
@@ -132,10 +132,17 @@ export async function saveOrder(priced) {
   }
 }
 
+// What a customer may see about their own order: nothing but its status and type.
+export async function publicStatus(number, token) {
+  const { rows } = await pool.query("SELECT number, status, type FROM orders WHERE number = $1 AND track_token = $2", [number, token]);
+  return rows[0] || null;
+}
+
 export async function listOrders(status) {
   const where = status ? "WHERE o.status = $1" : "";
   const { rows } = await pool.query(
-    `SELECT o.*, COALESCE(json_agg(json_build_object('ref', i.ref, 'name', i.name, 'parts', i.parts,
+    `SELECT o.id, o.number, o.status, o.type, o.customer, o.table_no, o.phone, o.address, o.area, o.note,
+            o.subtotal, o.delivery_fee, o.savings, o.total, o.created_at, COALESCE(json_agg(json_build_object('ref', i.ref, 'name', i.name, 'parts', i.parts,
               'unitPrice', i.unit_price, 'qty', i.qty, 'note', i.note) ORDER BY i.id) FILTER (WHERE i.id IS NOT NULL), '[]') AS items
        FROM orders o LEFT JOIN order_items i ON i.order_id = o.id
        ${where} GROUP BY o.id ORDER BY o.created_at DESC LIMIT 200`,
