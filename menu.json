@@ -2,7 +2,22 @@
   "settings": {
     "currency": "$",
     "deliveryFee": 3,
-    "whatsapp": "972592151626"
+    "whatsapp": "972592151626",
+    "timezone": "Asia/Jerusalem",
+    "useHours": false,
+    "pauseOrders": false,
+    "hours": {
+      "mon": { "closed": false, "open": "09:00", "close": "23:00" },
+      "tue": { "closed": false, "open": "09:00", "close": "23:00" },
+      "wed": { "closed": false, "open": "09:00", "close": "23:00" },
+      "thu": { "closed": false, "open": "09:00", "close": "23:00" },
+      "fri": { "closed": false, "open": "09:00", "close": "23:00" },
+      "sat": { "closed": false, "open": "09:00", "close": "23:00" },
+      "sun": { "closed": false, "open": "09:00", "close": "23:00" }
+    },
+    "minDeliveryOrder": 0,
+    "freeDeliveryOver": 0,
+    "deliveryAreas": []
   },
   "venues": [
     {

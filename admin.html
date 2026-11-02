@@ -25,7 +25,11 @@
   .thumb { width: 64px; height: 64px; border-radius: 12px; background: #efe5d6; display: flex; align-items: center; justify-content: center; font-size: 34px; overflow: hidden; flex: none; }
   .thumb img { width: 100%; height: 100%; object-fit: cover; }
   .special { font-weight: 700; color: #c0392b; align-self: end; padding-bottom: 10px; }
-  .check { display: flex; align-items: center; gap: 6px; font-size: 15px; color: #2b2118; }
+  .check { display: flex; align-items: center; gap: 6px; font-size: 15px; color: #2b2118; margin-top: 8px; }
+  .hours-row { display: grid; grid-template-columns: 90px auto 1fr 1fr; gap: 8px; align-items: end; margin-top: 10px; }
+  .area-row { display: grid; grid-template-columns: 1fr 1fr 90px auto; gap: 8px; align-items: end; margin: 10px 0; }
+  input[type=time] { width: 100%; box-sizing: border-box; padding: 9px; font-size: 15px; border: 1px solid #c9bba8; border-radius: 8px; margin-top: 3px; }
+  @media (max-width: 560px) { .hours-row { grid-template-columns: 1fr 1fr; } .area-row { grid-template-columns: 1fr 1fr; } }
   #bar { position: fixed; inset-inline: 0; bottom: 0; background: #2b2118; color: #fff; padding: 12px 16px; display: flex; gap: 12px; align-items: center; justify-content: space-between; }
   #bar .msg { flex: 1; font-size: 14px; }
   #bar button { background: #1fa855; font-weight: 600; }
@@ -39,10 +43,23 @@
   <h1>Menu Admin</h1>
   <p class="note">Edit prices, discounts and items. <a href="menu.html" target="_blank">Open the menu</a></p>
   <div id="login" class="card" hidden>
-    <h3 style="margin-top:0">Sign in</h3>
-    <p class="note">Paste your GitHub access token (it only stays in this browser). It needs <b>Contents: Read and write</b> on <code>adhamatare/test</code>.</p>
-    <label>Access token<input type="password" id="token" autocomplete="off"></label>
-    <div class="row"><button id="connect">Connect</button><span id="loginMsg" class="err"></span></div>
+    <form id="loginView" hidden>
+      <h3 style="margin-top:0">Sign in</h3>
+      <label>Username<input type="text" id="lUser" autocomplete="username"></label>
+      <label>Password<input type="password" id="lPass" autocomplete="current-password"></label>
+      <div class="row"><button type="submit" id="loginBtn">Sign in</button><button type="button" class="ghost" id="resetBtn">Forgot password / start over</button></div>
+      <p id="loginMsg" class="err"></p>
+    </form>
+    <form id="setupView" hidden>
+      <h3 style="margin-top:0">Set up the admin login</h3>
+      <p class="note">Pick a username and a password. Your GitHub token is stored on this device only, locked with that password, and you enter it once. The token needs <b>Contents: Read and write</b> on <code>adhamatare/test</code>.</p>
+      <label>Username<input type="text" id="sUser" value="adham" autocomplete="username"></label>
+      <label>Password (at least 8 characters)<input type="password" id="sPass" autocomplete="new-password"></label>
+      <label>Repeat password<input type="password" id="sPass2" autocomplete="new-password"></label>
+      <label>GitHub access token<input type="password" id="sToken" autocomplete="off"></label>
+      <div class="row"><button type="submit" id="setupBtn">Save and sign in</button></div>
+      <p id="setupMsg" class="err"></p>
+    </form>
   </div>
   <div id="app" hidden></div>
 </main>
@@ -56,7 +73,11 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, v); } catch {} },
   del(k) { try { localStorage.removeItem(k); } catch {} }
 };
-let token = store.get("ghToken") || "", sha = "", data = null, dirty = false;
+let token = "", sha = "", data = null, dirty = false;   // the token only ever lives in memory; on disk it is locked with the password
+
+// Settings added after the first release; missing ones are filled in when the menu loads.
+const dayDefaults = () => Object.fromEntries(["mon", "tue", "wed", "thu", "fri", "sat", "sun"].map(d => [d, { closed: false, open: "09:00", close: "23:00" }]));
+const DEFAULT_SETTINGS = { currency: "$", deliveryFee: 0, whatsapp: "", timezone: "Asia/Jerusalem", useHours: false, pauseOrders: false, minDeliveryOrder: 0, freeDeliveryOver: 0, deliveryAreas: [] };
 
 const gh = (url, opts = {}) => fetch("https://api.github.com" + url, {
   ...opts,
@@ -69,29 +90,100 @@ const encode = text => { let s = ""; for (const b of new TextEncoder().encode(te
 function say(text, cls = "") { const m = $("msg"); m.textContent = text; m.className = "msg " + cls; }
 const finalPrice = it => Math.round(it.price * (100 - (it.discount || 0))) / 100;
 
+// Checks the token against GitHub and loads the menu. Throws a readable error when it can't.
 async function connect() {
-  $("loginMsg").textContent = "";
-  try {
-    const repo = await gh(`/repos/${REPO}`);
-    if (repo.status === 401) throw new Error("That token was not accepted.");
-    if (!repo.ok) throw new Error("Cannot open the repository with this token.");
-    if (!(await repo.json()).permissions?.push) throw new Error("This token can only read. It needs Contents: Read and write.");
-    const res = await gh(`/repos/${REPO}/contents/${PATH}?ref=${BRANCH}`);
-    if (!res.ok) throw new Error("Could not load menu.json (" + res.status + ").");
-    const file = await res.json();
-    sha = file.sha;
-    data = JSON.parse(decode(file.content));
-  } catch (e) {
-    token = ""; store.del("ghToken");
-    $("login").hidden = false; $("app").hidden = true; $("bar").hidden = true;
-    $("loginMsg").textContent = e.message;
-    return;
-  }
-  store.set("ghToken", token);
+  const repo = await gh(`/repos/${REPO}`);
+  if (repo.status === 401) throw new Error("GitHub did not accept that token. It may have expired.");
+  if (!repo.ok) throw new Error("Cannot open the repository with this token.");
+  if (!(await repo.json()).permissions?.push) throw new Error("This token can only read. It needs Contents: Read and write.");
+  const res = await gh(`/repos/${REPO}/contents/${PATH}?ref=${BRANCH}`);
+  if (!res.ok) throw new Error("Could not load menu.json (" + res.status + ").");
+  const file = await res.json();
+  sha = file.sha;
+  data = JSON.parse(decode(file.content));
+  const s = data.settings || {};
+  data.settings = { ...DEFAULT_SETTINGS, ...s, hours: { ...dayDefaults(), ...(s.hours || {}) } };
   $("login").hidden = true; $("app").hidden = false; $("bar").hidden = false;
   dirty = false; say("Loaded the current menu.");
   build();
 }
+
+// ---- Login: username + password unlock the saved GitHub token (AES-GCM, key from PBKDF2) ----
+const b64 = bytes => btoa(String.fromCharCode(...bytes));
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function deriveKey(password, salt, iterations) {
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+
+async function lockToken(user, password, tok) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), iter = 600000;
+  const key = await deriveKey(password, salt, iter);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(tok)));
+  return { user, salt: b64(salt), iv: b64(iv), ct: b64(ct), iter };
+}
+
+async function unlockToken(vault, password) {
+  const key = await deriveKey(password, unb64(vault.salt), vault.iter);
+  return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(vault.iv) }, key, unb64(vault.ct)));
+}
+
+let failures = 0, lockedUntil = 0;
+
+function showAuth() {
+  const vault = JSON.parse(store.get("adminVault") || "null");
+  $("login").hidden = false;
+  $("loginView").hidden = !vault;
+  $("setupView").hidden = !!vault;
+  if (vault) $("lUser").value = vault.user;
+  else if (store.get("ghToken")) $("sToken").value = store.get("ghToken");   // token saved by the earlier version: lock it with a password
+}
+
+$("loginView").onsubmit = async e => {
+  e.preventDefault();
+  const msg = $("loginMsg");
+  if (Date.now() < lockedUntil) { msg.textContent = "Too many attempts. Wait a few seconds and try again."; return; }
+  const vault = JSON.parse(store.get("adminVault") || "null");
+  $("loginBtn").disabled = true; msg.textContent = "";
+  try {
+    if ($("lUser").value.trim().toLowerCase() !== vault.user.toLowerCase()) throw new Error("bad");
+    token = await unlockToken(vault, $("lPass").value);
+  } catch {
+    failures++;
+    if (failures >= 5) { lockedUntil = Date.now() + 30000; failures = 0; }
+    msg.textContent = "Wrong username or password.";
+    $("loginBtn").disabled = false;
+    return;
+  }
+  failures = 0; $("lPass").value = "";
+  try { await connect(); } catch (err) { token = ""; msg.textContent = err.message + " Use \"Forgot password / start over\" to enter a new token."; }
+  $("loginBtn").disabled = false;
+};
+
+$("setupView").onsubmit = async e => {
+  e.preventDefault();
+  const msg = $("setupMsg"), user = $("sUser").value.trim(), pass = $("sPass").value, tok = $("sToken").value.trim();
+  msg.textContent = "";
+  if (!user) { msg.textContent = "Enter a username."; return; }
+  if (pass.length < 8) { msg.textContent = "The password needs at least 8 characters."; return; }
+  if (pass !== $("sPass2").value) { msg.textContent = "The two passwords don't match."; return; }
+  if (!tok) { msg.textContent = "Paste your GitHub access token."; return; }
+  $("setupBtn").disabled = true; msg.textContent = "Checking the token...";
+  token = tok;
+  try {
+    await connect();
+    store.set("adminVault", JSON.stringify(await lockToken(user, pass, tok)));
+    store.del("ghToken");
+    $("sPass").value = $("sPass2").value = $("sToken").value = "";
+  } catch (err) { token = ""; msg.textContent = err.message; }
+  $("setupBtn").disabled = false;
+};
+
+$("resetBtn").onclick = () => {
+  if (!confirm("This removes the saved login and token from this device. You will need your GitHub token again. Continue?")) return;
+  store.del("adminVault"); store.del("ghToken"); location.reload();
+};
 
 // ---- Editor ----
 function field(label, obj, key, { type = "text", wide = false, ...attrs } = {}) {
@@ -108,6 +200,16 @@ function field(label, obj, key, { type = "text", wide = false, ...attrs } = {}) 
   };
   wrap.append(el);
   return wrap;
+}
+
+function checkbox(label, obj, key) {
+  const chk = document.createElement("label");
+  chk.className = "check";
+  const box = document.createElement("input");
+  box.type = "checkbox"; box.checked = !!obj[key];
+  box.onchange = () => { obj[key] = box.checked; dirty = true; say("Unsaved changes"); };
+  chk.append(box, label);
+  return chk;
 }
 
 function btn(text, cls, fn) {
@@ -175,16 +277,7 @@ function itemCard(sec, it) {
   card.addEventListener("edited", refresh);
   const row = document.createElement("div");
   row.className = "row";
-  const flag = (label, key) => {
-    const chk = document.createElement("label");
-    chk.className = "check";
-    const box = document.createElement("input");
-    box.type = "checkbox"; box.checked = !!it[key];
-    box.onchange = () => { it[key] = box.checked; dirty = true; say("Unsaved changes"); };
-    chk.append(box, label);
-    return chk;
-  };
-  row.append(flag("Mark as NEW", "isNew"), flag("Sold out (shown greyed, can't be ordered)", "soldOut"), flag("Hide from menu", "hidden"), btn("Delete item", "danger", () => {
+  row.append(checkbox("Mark as NEW", it, "isNew"), checkbox("Sold out (shown greyed, can't be ordered)", it, "soldOut"), checkbox("Hide from menu", it, "hidden"), btn("Delete item", "danger", () => {
     if (!confirm(`Delete "${it.en || "this item"}"?`)) return;
     sec.items.splice(sec.items.indexOf(it), 1);
     dirty = true; say("Unsaved changes"); build();
@@ -210,6 +303,54 @@ function build() {
   );
   sc.append(sg);
   app.append(sc);
+
+  // Opening hours and pausing orders
+  const hc = document.createElement("div");
+  hc.className = "card";
+  hc.innerHTML = "<h3 style='margin-top:0'>Opening hours</h3>";
+  const hnote = document.createElement("p");
+  hnote.className = "note";
+  hnote.textContent = "When hours are on, customers can only order while you are open. Set a close time earlier than the open time for a shop that closes after midnight.";
+  hc.append(hnote, checkbox("Use opening hours (block orders when closed)", s, "useHours"), checkbox("Pause all orders right now", s, "pauseOrders"));
+  const tz = document.createElement("div");
+  tz.className = "grid";
+  tz.append(field("Time zone (e.g. Asia/Jerusalem, Africa/Cairo, Asia/Riyadh)", s, "timezone", { wide: true }));
+  hc.append(tz);
+  const dayNames = { mon: "Monday", tue: "Tuesday", wed: "Wednesday", thu: "Thursday", fri: "Friday", sat: "Saturday", sun: "Sunday" };
+  for (const [key, label] of Object.entries(dayNames)) {
+    const r = document.createElement("div");
+    r.className = "hours-row";
+    const name = document.createElement("b"); name.textContent = label;
+    r.append(name, checkbox("Closed", s.hours[key], "closed"),
+      field("Opens", s.hours[key], "open", { type: "time" }), field("Closes", s.hours[key], "close", { type: "time" }));
+    hc.append(r);
+  }
+  app.append(hc);
+
+  // Delivery rules
+  const dc = document.createElement("div");
+  dc.className = "card";
+  dc.innerHTML = "<h3 style='margin-top:0'>Delivery</h3>";
+  const dnote = document.createElement("p");
+  dnote.className = "note";
+  dnote.textContent = "If you add delivery areas, each has its own fee and the customer must pick one. With no areas, the flat delivery fee above is used.";
+  const dg = document.createElement("div");
+  dg.className = "grid";
+  dg.append(
+    field("Minimum order for delivery (0 = none)", s, "minDeliveryOrder", { type: "number", min: 0, step: "0.01" }),
+    field("Free delivery from this order total (0 = never)", s, "freeDeliveryOver", { type: "number", min: 0, step: "0.01" })
+  );
+  dc.append(dnote, dg);
+  for (const area of s.deliveryAreas) {
+    const r = document.createElement("div");
+    r.className = "area-row";
+    r.append(field("Area (English)", area, "en"), field("Area (Arabic)", area, "ar", { dir: "rtl" }),
+      field("Fee", area, "fee", { type: "number", min: 0, step: "0.01" }),
+      btn("Remove", "danger", () => { s.deliveryAreas.splice(s.deliveryAreas.indexOf(area), 1); dirty = true; say("Unsaved changes"); build(); }));
+    dc.append(r);
+  }
+  dc.append(btn("+ Add delivery area", "ghost", () => { s.deliveryAreas.push({ en: "", ar: "", fee: 0 }); dirty = true; say("Unsaved changes"); build(); }));
+  app.append(dc);
 
   for (const venue of data.venues) {
     const h = document.createElement("h2");
@@ -282,6 +423,17 @@ async function uploadPhoto(file, it) {
 
 // ---- Save ----
 function validate() {
+  const s = data.settings;
+  if (!(s.deliveryFee >= 0) || !(s.minDeliveryOrder >= 0) || !(s.freeDeliveryOver >= 0)) return "Delivery fee, minimum order and free-delivery amount can't be negative.";
+  if (!/^\d{8,15}$/.test(String(s.whatsapp).replace(/\D/g, ""))) return "The orders WhatsApp number must be 8 to 15 digits with the country code.";
+  if (s.useHours) {
+    try { new Intl.DateTimeFormat("en-US", { timeZone: s.timezone }); } catch { return `"${s.timezone}" is not a valid time zone.`; }
+    for (const [d, r] of Object.entries(s.hours)) if (!r.closed && (!r.open || !r.close)) return `Set open and close times for ${d}, or mark it closed.`;
+  }
+  for (const a of s.deliveryAreas) {
+    if (!a.en.trim()) return "Every delivery area needs an English name.";
+    if (!(a.fee >= 0)) return `Delivery area "${a.en}" has an invalid fee.`;
+  }
   for (const v of data.venues) for (const sec of v.sections) for (const it of sec.items) {
     if (!it.en.trim()) return `An item in "${sec.en}" has no English title.`;
     if (!(it.price >= 0)) return `"${it.en}" has an invalid price.`;
@@ -314,12 +466,11 @@ async function save() {
   $("save").disabled = false;
 }
 
-$("connect").onclick = () => { token = $("token").value.trim(); if (token) connect(); };
 $("save").onclick = save;
-$("logout").onclick = () => { if (dirty && !confirm("Discard unsaved changes?")) return; store.del("ghToken"); location.reload(); };
+$("logout").onclick = () => { if (dirty && !confirm("Discard unsaved changes?")) return; dirty = false; location.reload(); };
 window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
-if (token) connect(); else $("login").hidden = false;
+showAuth();
 </script>
 </body>
 </html>

@@ -8,47 +8,54 @@
   body { font-family: system-ui, "Segoe UI", Tahoma, sans-serif; margin: 0; background: #faf7f2; color: #2b2118; padding-bottom: 80px; }
   header { padding: 16px 16px 0; text-align: center; position: relative; }
   header h1 { margin: 8px 0 0; }
-  #lang { position: absolute; top: 12px; inset-inline-end: 12px; padding: 6px 12px; border: 1px solid #c9bba8; border-radius: 8px; background: #fff; cursor: pointer; }
-  #table { color: #7a6a58; font-size: 14px; margin-top: 4px; }
-  nav { display: flex; gap: 8px; justify-content: center; padding: 16px; }
+  #lang { position: absolute; top: 12px; inset-inline-end: 12px; padding: 8px 14px; border: 1px solid #c9bba8; border-radius: 8px; background: #fff; cursor: pointer; }
+  #table { color: #6f5f4d; font-size: 14px; margin-top: 4px; }
+  #banner { display: none; margin: 12px 16px 0; padding: 10px 14px; border-radius: 10px; background: #fdecea; color: #8e2a20; text-align: center; font-weight: 600; }
+  #banner small { display: block; font-weight: 400; margin-top: 2px; }
+  nav { display: flex; gap: 8px; justify-content: center; padding: 16px; flex-wrap: wrap; }
   nav button { padding: 10px 20px; border: 0; border-radius: 999px; background: #e8dfd3; font-size: 16px; cursor: pointer; }
   nav button.active { background: #6b3f1d; color: #fff; }
   main { max-width: 560px; margin: 0 auto; padding: 0 16px; }
   h2 { border-bottom: 2px solid #6b3f1d; padding-bottom: 4px; margin-top: 28px; }
   .item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px dotted #c9bba8; }
-  .pic { flex: none; width: 64px; height: 64px; border-radius: 12px; background: #efe5d6; display: flex; align-items: center; justify-content: center; font-size: 34px; overflow: hidden; }
+  .pic { position: relative; flex: none; width: 64px; height: 64px; border-radius: 12px; background: #efe5d6; display: flex; align-items: center; justify-content: center; font-size: 34px; overflow: hidden; }
   .pic img { width: 100%; height: 100%; object-fit: cover; }
   .info { flex: 1; }
-  .info small { display: block; color: #7a6a58; }
+  .info small { display: block; color: #6f5f4d; }
   .price { white-space: nowrap; font-weight: 600; }
-  .pic { position: relative; }
   .soldout .pic > :not(.ovl) { opacity: .45; }
-  .soldout .info { color: #9a8a78; }
+  .soldout .info { color: #8a7a68; }
   .ovl { position: absolute; inset-inline: 0; bottom: 0; padding: 3px 2px; background: rgba(43, 33, 24, .85); color: #fff; font-size: 11px; font-weight: 700; line-height: 1.2; text-align: center; }
   .add:disabled { background: #cfc4b6; color: #fff; cursor: not-allowed; }
-  .was { display: block; color: #9a8a78; font-weight: 400; font-size: 13px; }
+  .was { display: block; color: #85705a; font-weight: 400; font-size: 13px; }
   .badge { display: inline-block; margin-inline-start: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #fff; vertical-align: middle; }
-  .badge.new { background: #1fa855; }
+  .badge.new { background: #1b8f49; }
   .badge.off { background: #c0392b; }
   .buy { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .qty { display: flex; align-items: center; gap: 8px; }
-  .qty button, .add { border: 0; border-radius: 8px; background: #6b3f1d; color: #fff; font-size: 16px; min-width: 32px; height: 32px; cursor: pointer; }
-  .add { padding: 0 12px; }
-  #bar { position: fixed; inset-inline: 0; bottom: 0; padding: 12px 16px; background: #6b3f1d; color: #fff; display: none; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 600; }
+  .qty button, .add { border: 0; border-radius: 8px; background: #6b3f1d; color: #fff; font-size: 18px; min-width: 44px; height: 44px; cursor: pointer; }
+  .add { padding: 0 14px; font-size: 16px; }
+  #bar { position: fixed; inset-inline: 0; bottom: 0; padding: 14px 16px; background: #6b3f1d; color: #fff; display: none; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 600; }
   #sheet { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: flex-end; justify-content: center; }
   #sheet .panel { background: #faf7f2; width: 100%; max-width: 560px; max-height: 90vh; overflow: auto; border-radius: 16px 16px 0 0; padding: 16px; box-sizing: border-box; }
   .line { padding: 8px 0; border-bottom: 1px dotted #c9bba8; }
   .linetop { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .linetop > span:first-child { flex: 1; }
   .line input { font-size: 14px; padding: 6px 8px; }
-  .panel input, .panel textarea { width: 100%; box-sizing: border-box; padding: 10px; margin: 6px 0; font-size: 16px; border: 1px solid #c9bba8; border-radius: 8px; }
+  .panel input, .panel textarea, .panel select { width: 100%; box-sizing: border-box; padding: 10px; margin: 6px 0; font-size: 16px; border: 1px solid #c9bba8; border-radius: 8px; background: #fff; }
   .types { display: flex; gap: 6px; margin-bottom: 8px; }
-  .types button { flex: 1; padding: 10px 4px; border: 1px solid #c9bba8; border-radius: 8px; background: #fff; font-size: 15px; cursor: pointer; }
+  .types button { flex: 1; padding: 12px 4px; border: 1px solid #c9bba8; border-radius: 8px; background: #fff; font-size: 15px; cursor: pointer; }
   .types button.active { background: #6b3f1d; color: #fff; border-color: #6b3f1d; }
-  .panel input.bad { border-color: #c0392b; background: #fdecea; }
+  .panel .bad { border-color: #c0392b; background: #fdecea; }
+  .warn { color: #8e2a20; font-size: 14px; margin: 4px 0; }
   .total { font-size: 18px; font-weight: 700; display: flex; justify-content: space-between; margin: 12px 0; }
-  .send { width: 100%; padding: 14px; border: 0; border-radius: 10px; background: #1fa855; color: #fff; font-size: 17px; font-weight: 600; cursor: pointer; }
-  .close { background: none; border: 0; font-size: 15px; color: #7a6a58; cursor: pointer; width: 100%; padding: 10px; }
+  .send, .secondary { width: 100%; padding: 14px; border: 0; border-radius: 10px; font-size: 17px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+  .send { background: #1b8f49; color: #fff; }
+  .send:disabled { background: #cfc4b6; cursor: not-allowed; }
+  .secondary { background: #e8dfd3; color: #2b2118; }
+  .close { background: none; border: 0; font-size: 15px; color: #6f5f4d; cursor: pointer; width: 100%; padding: 12px; }
+  .ordno { font-size: 28px; font-weight: 800; letter-spacing: 2px; text-align: center; margin: 8px 0; }
+  .center { text-align: center; }
 </style>
 </head>
 <body>
@@ -57,6 +64,7 @@
   <h1 id="title"></h1>
   <div id="table"></div>
 </header>
+<div id="banner"></div>
 <nav id="tabs"></nav>
 <main id="menu"></main>
 <div id="bar"><span id="barCount"></span><span id="barTotal"></span></div>
@@ -64,33 +72,42 @@
 <script>
 // ---- Settings ----
 // Overwritten from menu.json "settings" (editable in admin.html).
+let SETTINGS = {};
 let WHATSAPP_NUMBER = "";   // Counter/kitchen WhatsApp, digits only with country code. Empty = customer picks the contact.
 let CURRENCY = { en: "$", ar: "$" };
-let DELIVERY_FEE = 0;       // Added to the total for delivery orders.
 const OFFERS = "__offers";  // Virtual tab listing every discounted item.
+const DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 const UI = {
-  en: { title: "Our Menu", table: "Table", add: "Add", offers: "Special offers", new: "NEW", soldOut: "Sold out", cart: "View order", order: "Your order", tableNo: "Table number", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", phone: "Phone number", address: "Delivery address", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", lang: "العربية" },
-  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", offers: "العروض", new: "جديد", soldOut: "نفدت الكمية", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", phone: "رقم الهاتف", address: "عنوان التوصيل", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", lang: "English" }
+  en: { title: "Our Menu", table: "Table", add: "Add", offers: "Special offers", new: "NEW", soldOut: "Sold out", cart: "View order", order: "Your order", tableNo: "Table number", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", free: "Free", phone: "Phone number", address: "Delivery address", area: "Delivery area", pickArea: "Select your area", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", orderNo: "Order", lang: "العربية",
+        closed: "We're closed right now", paused: "Online ordering is paused right now", todayHours: "Today's hours", closedToday: "Closed today", minOrder: "Minimum order for delivery is", badPhone: "Please enter a valid phone number", needArea: "Please select your delivery area",
+        confirmTitle: "Almost done!", confirmText: "WhatsApp opened with your order. Press Send in WhatsApp to place it. Your order is NOT placed until you send the message.", openAgain: "Open WhatsApp again", sent: "I sent it", back: "Back to my order", thanks: "Thank you! We received your order message.", keep: "Keep this order number", done: "Done" },
+  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", offers: "العروض", new: "جديد", soldOut: "نفدت الكمية", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", free: "مجاني", phone: "رقم الهاتف", address: "عنوان التوصيل", area: "منطقة التوصيل", pickArea: "اختر منطقتك", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", orderNo: "الطلب", lang: "English",
+        closed: "نحن مغلقون الآن", paused: "الطلب عبر الإنترنت متوقف مؤقتًا", todayHours: "ساعات اليوم", closedToday: "مغلق اليوم", minOrder: "الحد الأدنى لطلب التوصيل", badPhone: "يرجى إدخال رقم هاتف صحيح", needArea: "يرجى اختيار منطقة التوصيل",
+        confirmTitle: "أوشكنا على الانتهاء!", confirmText: "فتح واتساب مع طلبك. اضغط إرسال في واتساب لتأكيد الطلب. لن يتم تسجيل طلبك حتى ترسل الرسالة.", openAgain: "افتح واتساب مرة أخرى", sent: "أرسلتها", back: "العودة إلى طلبي", thanks: "شكرًا لك! وصلتنا رسالة طلبك.", keep: "احتفظ برقم الطلب", done: "تم" }
 };
 
 // Menu content comes from menu.json (edited through admin.html).
-// Item: { id, en, ar, dEn, dAr, price, discount (percent), pic, isNew }. pic is an emoji, or an image path/URL.
+// Item: { id, en, ar, dEn, dAr, price, discount (percent), pic, isNew, soldOut, hidden }. pic is an emoji, or an image path/URL.
 let MENUS = {};
 
 // ---- State ----
 const params = new URLSearchParams(location.search);
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch {} }
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} }
 };
 let lang = params.get("lang") || store.get("lang") || "en";
 if (!UI[lang]) lang = "en";
 let tab = "";
 let tableNo = params.get("table") || "";
 // How the customer wants the order served; a table QR defaults to dine-in.
-const order = { type: tableNo ? "dinein" : "takeaway", table: tableNo, phone: "", address: "", note: "" };
-const cart = {};   // id -> { name, price, qty }
+const order = { type: tableNo ? "dinein" : "takeaway", table: tableNo, phone: "", address: "", area: "", note: "" };
+const cart = {};   // id -> { name, ar, price, qty, note }
+let view = "order";   // order | confirm | done
+let pending = null;   // { id, url } once the WhatsApp chat has been opened
+let wasOpen = true;
 
 const $ = id => document.getElementById(id);
 const t = k => UI[lang][k];
@@ -100,8 +117,52 @@ const fmtNum = n => lang === "ar" ? String(n).replace(/\d/g, d => "٠١٢٣٤٥�
 function totals() {
   let count = 0, sum = 0;
   for (const l of Object.values(cart)) { count += l.qty; sum += l.qty * l.price; }
-  return { count, sum };
+  return { count, sum: Math.round(sum * 100) / 100 };
 }
+
+// ---- Opening hours ----
+function openStatus() {
+  if (SETTINGS.pauseOrders) return { open: false, paused: true };
+  if (!SETTINGS.useHours || !SETTINGS.hours) return { open: true };
+  let day, mins;
+  try {
+    const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+      timeZone: SETTINGS.timezone || "UTC", weekday: "short", hour: "numeric", minute: "numeric", hourCycle: "h23"
+    }).formatToParts(new Date()).map(x => [x.type, x.value]));
+    day = DAYS.indexOf(p.weekday.toLowerCase().slice(0, 3));
+    mins = (Number(p.hour) % 24) * 60 + Number(p.minute);
+  } catch { return { open: true }; }   // unknown timezone: never block customers
+  const toMin = s => { const [h, m] = String(s).split(":").map(Number); return h * 60 + (m || 0); };
+  const rangeOf = d => { const r = SETTINGS.hours[DAYS[(d + 7) % 7]]; return r && !r.closed ? [toMin(r.open), toMin(r.close)] : null; };
+  const today = rangeOf(day), yesterday = rangeOf(day - 1);
+  let open = false;
+  if (today) { const [o, c] = today; open = c > o ? mins >= o && mins < c : mins >= o; }   // close <= open means past midnight
+  if (!open && yesterday) { const [o, c] = yesterday; if (c <= o) open = mins < c; }
+  return { open, today: SETTINGS.hours[DAYS[day]] };
+}
+
+function renderBanner() {
+  const s = openStatus(), b = $("banner");
+  wasOpen = s.open;
+  if (s.open) { b.style.display = "none"; return; }
+  b.style.display = "block";
+  b.textContent = s.paused ? t("paused") : t("closed");
+  if (!s.paused && s.today) {
+    const small = document.createElement("small");
+    small.textContent = s.today.closed ? t("closedToday") : `${t("todayHours")}: ${fmtNum(s.today.open)} - ${fmtNum(s.today.close)}`;
+    b.appendChild(small);
+  }
+}
+
+// ---- Delivery ----
+function deliveryFee(sum) {
+  if (order.type !== "delivery") return 0;
+  if (Number(SETTINGS.freeDeliveryOver) > 0 && sum >= Number(SETTINGS.freeDeliveryOver)) return 0;
+  const areas = SETTINGS.deliveryAreas || [];
+  if (areas.length) { const a = areas[order.area]; return a ? Number(a.fee) || 0 : 0; }
+  return Number(SETTINGS.deliveryFee) || 0;
+}
+const validPhone = p => { const d = p.replace(/\D/g, ""); return d.length >= 8 && d.length <= 15; };
 
 function picture(src) {
   const pic = document.createElement("div");
@@ -129,10 +190,37 @@ function sectionsFor(key) {
 
 const hasOffers = () => sectionsFor(OFFERS).length > 0;
 
+// ---- Cart (kept on this device so a refresh or a trip to WhatsApp doesn't lose it) ----
+function saveCart() {
+  const slim = {};
+  for (const [id, l] of Object.entries(cart)) slim[id] = { qty: l.qty, note: l.note || "" };
+  store.set("cart_v1", JSON.stringify({ at: Date.now(), items: slim }));
+  if (pending) store.set("pending_v1", JSON.stringify({ at: Date.now(), ...pending })); else store.del("pending_v1");
+}
+
+function restoreCart() {
+  const byId = {};
+  for (const m of Object.values(MENUS)) for (const s of m.sections) for (const it of s.items) byId[it.id] = it;
+  try {
+    const saved = JSON.parse(store.get("cart_v1") || "null");
+    if (saved && Date.now() - saved.at < 6 * 3600e3) {
+      for (const [id, v] of Object.entries(saved.items)) {
+        const it = byId[id];
+        if (it && !it.hidden && !it.soldOut) cart[id] = { name: it.en, ar: it.ar, price: finalPrice(it), qty: v.qty, note: v.note };
+      }
+    }
+    const p = JSON.parse(store.get("pending_v1") || "null");
+    if (p && Date.now() - p.at < 12 * 3600e3 && Object.keys(cart).length) { pending = { id: p.id, url: p.url }; view = "confirm"; }
+    else store.del("pending_v1");
+  } catch {}
+}
+
 function change(id, name, price, delta, ar) {
   const l = cart[id] || (cart[id] = { name, ar, price, qty: 0 });
   l.qty += delta;
   if (l.qty <= 0) delete cart[id];
+  pending = null; view = "order";   // the order changed, so any earlier WhatsApp message is out of date
+  saveCart();
   render();
 }
 
@@ -144,6 +232,8 @@ function render() {
   $("title").textContent = t("title");
   $("lang").textContent = t("lang");
   $("table").textContent = tableNo ? `${t("table")} ${tableNo}` : "";
+  renderBanner();
+  const open = wasOpen;
 
   $("tabs").innerHTML = "";
   const tabs = Object.entries(MENUS).map(([key, m]) => [key, lang === "ar" ? m.ar : key]);
@@ -185,16 +275,16 @@ function render() {
       p.appendChild(document.createTextNode(money(price)));
       buy.appendChild(p);
       const qty = cart[id] ? cart[id].qty : 0;
-      if (it.soldOut) {
+      if (it.soldOut || (!open && !qty)) {
         const a = document.createElement("button");
         a.className = "add"; a.textContent = t("add"); a.disabled = true;
         buy.appendChild(a);
       } else if (qty) {
         const q = document.createElement("div");
         q.className = "qty";
-        const minus = document.createElement("button"); minus.textContent = "−"; minus.onclick = () => change(id, en, price, -1, ar);
+        const minus = document.createElement("button"); minus.textContent = "−"; minus.setAttribute("aria-label", "-"); minus.onclick = () => change(id, en, price, -1, ar);
         const n = document.createElement("span"); n.textContent = fmtNum(qty);
-        const plus = document.createElement("button"); plus.textContent = "+"; plus.onclick = () => change(id, en, price, 1, ar);
+        const plus = document.createElement("button"); plus.textContent = "+"; plus.setAttribute("aria-label", "+"); plus.onclick = () => change(id, en, price, 1, ar);
         q.append(minus, n, plus);
         buy.appendChild(q);
       } else {
@@ -218,6 +308,9 @@ function render() {
 }
 
 function renderSheet() {
+  if (view === "confirm" && pending) return renderConfirm();
+  if (view === "done" && pending) return renderDone();
+  view = "order";
   const panel = $("panel");
   panel.innerHTML = "";
   const h = document.createElement("h2"); h.textContent = t("order"); h.style.marginTop = "0";
@@ -240,20 +333,21 @@ function renderSheet() {
     const note = document.createElement("input");
     note.placeholder = t("itemNote");
     note.value = l.note || "";
-    note.oninput = () => { l.note = note.value; };
+    note.oninput = () => { l.note = note.value; saveCart(); };
     line.append(top, note);
     panel.appendChild(line);
   }
   if (count) {
+    const fee = deliveryFee(sum);
     const tot = document.createElement("div"); tot.className = "total";
     tot.innerHTML = "<span></span><span></span>";
-    const fee = order.type === "delivery" ? DELIVERY_FEE : 0;
     tot.children[0].textContent = t("total"); tot.children[1].textContent = money(sum + fee);
     let feeRow = null;
-    if (fee) {
+    if (order.type === "delivery") {
       feeRow = document.createElement("div"); feeRow.className = "linetop"; feeRow.style.padding = "8px 0";
       feeRow.innerHTML = "<span></span><span></span>";
-      feeRow.children[0].textContent = t("fee"); feeRow.children[1].textContent = money(fee);
+      const needsArea = (SETTINGS.deliveryAreas || []).length && !SETTINGS.deliveryAreas[order.area];
+      feeRow.children[0].textContent = t("fee"); feeRow.children[1].textContent = needsArea ? "-" : fee ? money(fee) : t("free");
     }
     const types = document.createElement("div"); types.className = "types";
     for (const key of ["dinein", "takeaway", "delivery"]) {
@@ -274,44 +368,121 @@ function renderSheet() {
     const fields = [];
     if (order.type === "dinein") fields.push(field("table", t("tableNo"), { inputMode: "numeric" }));
     if (order.type === "delivery") {
-      fields.push(field("phone", t("phone"), { inputMode: "tel" }));
-      fields.push(field("address", t("address")));
+      fields.push(field("phone", t("phone"), { inputMode: "tel", autocomplete: "tel" }));
+      const areas = SETTINGS.deliveryAreas || [];
+      if (areas.length) {
+        const sel = document.createElement("select");
+        sel.dataset.field = "area";
+        const ph = document.createElement("option"); ph.value = ""; ph.textContent = t("pickArea"); sel.appendChild(ph);
+        areas.forEach((a, i) => {
+          const o = document.createElement("option");
+          o.value = String(i);
+          o.textContent = `${lang === "ar" && a.ar ? a.ar : a.en} (${money(Number(a.fee) || 0)})`;
+          sel.appendChild(o);
+        });
+        sel.value = order.area;
+        sel.onchange = () => { order.area = sel.value; renderSheet(); };
+        fields.push(sel);
+      }
+      fields.push(field("address", t("address"), { autocomplete: "street-address" }));
     }
     const ni = document.createElement("textarea"); ni.placeholder = t("note"); ni.rows = 2; ni.value = order.note;
     ni.oninput = () => { order.note = ni.value; };
+
+    // Things that stop the order from being sent right now
+    const notes = [];
+    const minOrder = Number(SETTINGS.minDeliveryOrder) || 0;
+    const open = openStatus();
+    if (!open.open) notes.push(open.paused ? t("paused") : t("closed"));
+    if (order.type === "delivery" && minOrder > 0 && sum < minOrder) notes.push(`${t("minOrder")} ${money(minOrder)}`);
     const send = document.createElement("button"); send.className = "send"; send.textContent = t("send");
+    send.disabled = notes.length > 0;
     send.onclick = sendOrder;
-    panel.append(types, ...fields, ni, ...(feeRow ? [feeRow] : []), tot, send);
+    panel.append(types, ...fields, ni, ...(feeRow ? [feeRow] : []), tot);
+    for (const text of notes) { const w = document.createElement("div"); w.className = "warn"; w.textContent = text; panel.appendChild(w); }
+    panel.appendChild(send);
   }
   const close = document.createElement("button"); close.className = "close"; close.textContent = t("close");
   close.onclick = () => { $("sheet").style.display = "none"; };
   panel.appendChild(close);
 }
 
+// Short order number so the customer and the kitchen can refer to the same order.
+const newOrderId = () => {
+  const a = (Date.now() % 1679616).toString(36).toUpperCase().padStart(4, "0");
+  const b = Math.floor(Math.random() * 1296).toString(36).toUpperCase().padStart(2, "0");
+  return a + b;
+};
+
+function flagBad(selector) {
+  const el = document.querySelector(selector);
+  if (el) { el.classList.add("bad"); el.focus(); }
+}
+
 function sendOrder() {
   // The message is always written in English so the kitchen can read it whatever language the customer used.
   const { sum } = totals();
-  const required = { dinein: ["table"], takeaway: [], delivery: ["phone", "address"] }[order.type];
-  const missing = required.find(k => !order[k].trim());
-  if (missing) {
-    const el = document.querySelector(`#panel [data-field="${missing}"]`);
-    el.classList.add("bad"); el.focus();
-    return;
+  if (!openStatus().open) { renderSheet(); return; }
+  if (order.type === "dinein" && !order.table.trim()) return flagBad('#panel [data-field="table"]');
+  if (order.type === "delivery") {
+    if (!validPhone(order.phone)) return flagBad('#panel [data-field="phone"]');
+    if ((SETTINGS.deliveryAreas || []).length && !SETTINGS.deliveryAreas[order.area]) return flagBad('#panel [data-field="area"]');
+    if (!order.address.trim()) return flagBad('#panel [data-field="address"]');
   }
-  const note = order.note.trim();
-  const lines = [`*${UI.en.greeting}*`, `${UI.en.type}: ${UI.en[order.type]}`];
+  const id = newOrderId();
+  const fee = deliveryFee(sum);
+  const lines = [`*${UI.en.greeting} #${id}*`, `${UI.en.type}: ${UI.en[order.type]}`];
   if (order.type === "dinein") lines.push(`${UI.en.table}: ${order.table.trim()}`);
-  if (order.type === "delivery") lines.push(`${UI.en.phone}: ${order.phone.trim()}`, `${UI.en.address}: ${order.address.trim()}`);
+  if (order.type === "delivery") {
+    const area = (SETTINGS.deliveryAreas || [])[order.area];
+    lines.push(`${UI.en.phone}: ${order.phone.trim()}`);
+    if (area) lines.push(`${UI.en.area}: ${area.en}`);
+    lines.push(`${UI.en.address}: ${order.address.trim()}`);
+  }
   for (const l of Object.values(cart)) {
     lines.push(`${l.qty} x ${l.name} - ${CURRENCY.en}${(l.qty * l.price).toFixed(2)}`);
     if (l.note && l.note.trim()) lines.push(`   > ${l.note.trim()}`);
   }
-  const fee = order.type === "delivery" ? DELIVERY_FEE : 0;
-  if (fee) lines.push(`${UI.en.fee}: ${CURRENCY.en}${fee.toFixed(2)}`);
+  if (order.type === "delivery") lines.push(`${UI.en.fee}: ${fee ? CURRENCY.en + fee.toFixed(2) : UI.en.free}`);
   lines.push(`${UI.en.total}: ${CURRENCY.en}${(sum + fee).toFixed(2)}`);
-  if (note) lines.push(`${UI.en.note.replace(" (optional)", "")}: ${note}`);
+  if (order.note.trim()) lines.push(`${UI.en.note.replace(" (optional)", "")}: ${order.note.trim()}`);
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`;
+  pending = { id, url };
+  view = "confirm";
+  saveCart();
   window.open(url, "_blank");
+  renderSheet();
+}
+
+// The order only exists once the customer presses Send inside WhatsApp, so say so and let them re-open it.
+function renderConfirm() {
+  const panel = $("panel");
+  panel.innerHTML = "";
+  const h = document.createElement("h2"); h.textContent = t("confirmTitle"); h.style.marginTop = "0"; h.className = "center";
+  const no = document.createElement("div"); no.className = "ordno"; no.textContent = `${t("orderNo")} #${pending.id}`;
+  const p = document.createElement("p"); p.className = "center"; p.textContent = t("confirmText");
+  const again = document.createElement("button"); again.className = "send"; again.textContent = t("openAgain");
+  again.onclick = () => window.open(pending.url, "_blank");
+  const sent = document.createElement("button"); sent.className = "secondary"; sent.textContent = t("sent");
+  sent.onclick = () => {
+    for (const k of Object.keys(cart)) delete cart[k];
+    store.del("cart_v1"); store.del("pending_v1");
+    view = "done"; render(); renderSheet();
+  };
+  const back = document.createElement("button"); back.className = "close"; back.textContent = t("back");
+  back.onclick = () => { pending = null; view = "order"; saveCart(); renderSheet(); };
+  panel.append(h, no, p, again, sent, back);
+}
+
+function renderDone() {
+  const panel = $("panel");
+  panel.innerHTML = "";
+  const h = document.createElement("h2"); h.textContent = t("thanks"); h.style.marginTop = "0"; h.className = "center";
+  const no = document.createElement("div"); no.className = "ordno"; no.textContent = `${t("orderNo")} #${pending.id}`;
+  const p = document.createElement("p"); p.className = "center"; p.textContent = t("keep");
+  const ok = document.createElement("button"); ok.className = "send"; ok.textContent = t("done");
+  ok.onclick = () => { pending = null; view = "order"; $("sheet").style.display = "none"; render(); };
+  panel.append(h, no, p, ok);
 }
 
 $("lang").onclick = () => { lang = lang === "en" ? "ar" : "en"; store.set("lang", lang); render(); };
@@ -323,10 +494,9 @@ async function init() {
     const res = await fetch("menu.json?t=" + Date.now(), { cache: "no-store" });
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
-    const s = data.settings || {};
-    WHATSAPP_NUMBER = s.whatsapp || "";
-    CURRENCY = { en: s.currency || "$", ar: s.currency || "$" };
-    DELIVERY_FEE = Number(s.deliveryFee) || 0;
+    SETTINGS = data.settings || {};
+    WHATSAPP_NUMBER = SETTINGS.whatsapp || "";
+    CURRENCY = { en: SETTINGS.currency || "$", ar: SETTINGS.currency || "$" };
     MENUS = Object.fromEntries(data.venues.map(v => [v.key, v]));
   } catch (e) {
     $("menu").textContent = "Could not load the menu. Please refresh.";
@@ -334,7 +504,10 @@ async function init() {
   }
   const wanted = decodeURIComponent(location.hash.slice(1));
   tab = MENUS[wanted] || (wanted === OFFERS && hasOffers()) ? wanted : Object.keys(MENUS)[0];
+  restoreCart();
   render();
+  if (view === "confirm") { $("sheet").style.display = "flex"; renderSheet(); }   // coming back from WhatsApp
+  setInterval(() => { if (openStatus().open !== wasOpen) render(); }, 30000);       // opening or closing time passed
 }
 init();
 </script>
