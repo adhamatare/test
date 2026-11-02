@@ -57,19 +57,6 @@
           "ar": "المقبلات",
           "items": [
             {
-              "id": "i1",
-              "en": "Lentil Soup",
-              "ar": "شوربة عدس",
-              "dEn": "Red lentils, lemon, cumin",
-              "dAr": "عدس أحمر وليمون وكمون",
-              "price": 5,
-              "discount": 0,
-              "pic": "🍲",
-              "isNew": true,
-              "soldOut": false,
-              "hidden": false
-            },
-            {
               "id": "i2",
               "en": "Caesar Salad",
               "ar": "سلطة سيزر",
@@ -87,18 +74,6 @@
           "en": "Mains",
           "ar": "الأطباق الرئيسية",
           "items": [
-            {
-              "id": "i4",
-              "en": "Grilled Chicken",
-              "ar": "دجاج مشوي",
-              "dEn": "Herb marinade, rice, vegetables",
-              "dAr": "متبل بالأعشاب مع أرز وخضار",
-              "price": 5,
-              "discount": 50,
-              "pic": "🍗",
-              "isNew": true,
-              "soldOut": true
-            },
             {
               "id": "i5",
               "en": "Beef Burger",
