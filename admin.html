@@ -234,7 +234,8 @@ function btn(text, cls, fn) {
 
 function nextId() { return "n" + Date.now().toString(36) + Math.floor(Math.random() * 1000); }
 
-function itemCard(sec, it) {
+// opts.noDelete hides "Delete item": the Special offers tab must never remove an item from the menu.
+function itemCard(sec, it, opts = {}) {
   const card = document.createElement("div");
   card.className = "card";
   const grid = document.createElement("div");
@@ -291,9 +292,11 @@ function itemCard(sec, it) {
   card.addEventListener("edited", refresh);
   const row = document.createElement("div");
   row.className = "row";
-  row.append(checkbox("Mark as NEW", it, "isNew"), checkbox("Sold out (shown greyed, can't be ordered)", it, "soldOut"), checkbox("Hide from menu", it, "hidden"), btn("Delete item", "danger", () => {
-    if (!confirm(`Delete "${it.en || "this item"}"?`)) return;
+  row.append(checkbox("Mark as NEW", it, "isNew"), checkbox("Sold out (shown greyed, can't be ordered)", it, "soldOut"), checkbox("Hide from menu", it, "hidden"));
+  if (!opts.noDelete) row.append(btn("Delete item", "danger", () => {
+    if (!confirm(`Delete "${it.en || "this item"}" from the whole menu? This removes it everywhere, including offers and combos.`)) return;
     sec.items.splice(sec.items.indexOf(it), 1);
+    for (const b of data.bundles || []) b.items = b.items.filter(r => r.id !== it.id);   // a combo must not keep pointing at a deleted item
     dirty = true; say("Unsaved changes"); build();
   }));
   card.append(grid, row);
@@ -646,7 +649,7 @@ function build() {
     const crumb = document.createElement("div");
     crumb.className = "crumb";
     crumb.textContent = `${v.key} › ${sec.en}`;
-    const card = itemCard(sec, it);
+    const card = itemCard(sec, it, { noDelete: true });
     card.lastElementChild.append(btn("Remove offer", "ghost", () => { it.discount = 0; dirty = true; say("Unsaved changes"); build(); }));
     op.append(crumb, card);
   }
