@@ -22,7 +22,8 @@
               "price": 5,
               "discount": 0,
               "pic": "🍲",
-              "isNew": true
+              "isNew": false,
+              "soldOut": true
             },
             {
               "id": "i2",
