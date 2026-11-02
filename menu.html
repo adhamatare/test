@@ -28,7 +28,10 @@
   #bar { position: fixed; inset-inline: 0; bottom: 0; padding: 12px 16px; background: #6b3f1d; color: #fff; display: none; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 600; }
   #sheet { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: flex-end; justify-content: center; }
   #sheet .panel { background: #faf7f2; width: 100%; max-width: 560px; max-height: 90vh; overflow: auto; border-radius: 16px 16px 0 0; padding: 16px; box-sizing: border-box; }
-  .line { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px dotted #c9bba8; }
+  .line { padding: 8px 0; border-bottom: 1px dotted #c9bba8; }
+  .linetop { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .linetop > span:first-child { flex: 1; }
+  .line input { font-size: 14px; padding: 6px 8px; }
   .panel input, .panel textarea { width: 100%; box-sizing: border-box; padding: 10px; margin: 6px 0; font-size: 16px; border: 1px solid #c9bba8; border-radius: 8px; }
   .total { font-size: 18px; font-weight: 700; display: flex; justify-content: space-between; margin: 12px 0; }
   .send { width: 100%; padding: 14px; border: 0; border-radius: 10px; background: #1fa855; color: #fff; font-size: 17px; font-weight: 600; cursor: pointer; }
@@ -51,8 +54,8 @@ const WHATSAPP_NUMBER = "972522866414";   // Counter/kitchen WhatsApp, digits on
 const CURRENCY = { en: "$", ar: "$" };
 
 const UI = {
-  en: { title: "Our Menu", table: "Table", add: "Add", cart: "View order", order: "Your order", tableNo: "Table number", note: "Notes (optional)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", lang: "العربية" },
-  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", note: "ملاحظات (اختياري)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", lang: "English" }
+  en: { title: "Our Menu", table: "Table", add: "Add", cart: "View order", order: "Your order", tableNo: "Table number", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", lang: "العربية" },
+  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", lang: "English" }
 };
 
 // Item: [English name, Arabic name, English description, Arabic description, price, picture]
@@ -215,9 +218,21 @@ function renderSheet() {
   for (const [id, l] of Object.entries(cart)) {
     const line = document.createElement("div");
     line.className = "line";
-    const nm = document.createElement("span"); nm.textContent = `${lang === "ar" ? l.ar : l.name} × ${fmtNum(l.qty)}`;
+    const top = document.createElement("div");
+    top.className = "linetop";
+    const nm = document.createElement("span"); nm.textContent = lang === "ar" ? l.ar : l.name;
+    const q = document.createElement("div"); q.className = "qty";
+    const minus = document.createElement("button"); minus.textContent = "−"; minus.onclick = () => change(id, l.name, l.price, -1, l.ar);
+    const n = document.createElement("span"); n.textContent = fmtNum(l.qty);
+    const plus = document.createElement("button"); plus.textContent = "+"; plus.onclick = () => change(id, l.name, l.price, 1, l.ar);
+    q.append(minus, n, plus);
     const pr = document.createElement("span"); pr.textContent = money(l.qty * l.price);
-    line.append(nm, pr);
+    top.append(nm, q, pr);
+    const note = document.createElement("input");
+    note.placeholder = t("itemNote");
+    note.value = l.note || "";
+    note.oninput = () => { l.note = note.value; };
+    line.append(top, note);
     panel.appendChild(line);
   }
   if (count) {
@@ -242,7 +257,10 @@ function sendOrder() {
   const note = $("noteInput").value.trim();
   const lines = [`*${UI.en.greeting}* (${tab})`];
   if (table) lines.push(`${UI.en.table}: ${table}`);
-  for (const l of Object.values(cart)) lines.push(`${l.qty} x ${l.name} - ${CURRENCY.en}${(l.qty * l.price).toFixed(2)}`);
+  for (const l of Object.values(cart)) {
+    lines.push(`${l.qty} x ${l.name} - ${CURRENCY.en}${(l.qty * l.price).toFixed(2)}`);
+    if (l.note && l.note.trim()) lines.push(`   > ${l.note.trim()}`);
+  }
   lines.push(`${UI.en.total}: ${CURRENCY.en}${sum.toFixed(2)}`);
   if (note) lines.push(`${UI.en.note.replace(" (optional)", "")}: ${note}`);
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`;
