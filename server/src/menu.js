@@ -2,7 +2,8 @@ import { pool } from "./db.js";
 
 // Builds the same JSON shape as menu.json so menu.html can read it unchanged.
 export async function loadMenu() {
-  const [settings, venues, sections, items, bundles, bundleItems] = await Promise.all([
+  const [meta, settings, venues, sections, items, bundles, bundleItems] = await Promise.all([
+    pool.query("SELECT version FROM menu_meta WHERE id = 1"),
     pool.query("SELECT key, value FROM settings"),
     pool.query("SELECT key, ar FROM venues ORDER BY position"),
     pool.query("SELECT id, venue_key, en, ar FROM sections ORDER BY position, id"),
@@ -32,6 +33,7 @@ export async function loadMenu() {
   }
 
   return {
+    version: meta.rows[0]?.version ?? 1,   // the admin sends this back when saving
     settings: Object.fromEntries(settings.rows.map(r => [r.key, r.value])),
     venues: venues.rows.map(v => ({ key: v.key, ar: v.ar, sections: sectionsByVenue.get(v.key) || [] })),
     bundles: bundles.rows.map(b => ({

@@ -1,6 +1,8 @@
+import { randomBytes } from "node:crypto";
 import express from "express";
 import cors from "cors";
 import { pool } from "./db.js";
+import { MenuError, saveMenu } from "./menuwrite.js";
 import { lockedFor, login, logout, requireAdmin } from "./auth.js";
 import { loadMenu } from "./menu.js";
 import { setup } from "./setup.js";
@@ -14,7 +16,12 @@ app.set("trust proxy", 1);
 const allowed = (process.env.ALLOWED_ORIGINS || "https://adhamatare.github.io,http://localhost:8765,http://localhost:3000")
   .split(",").map(s => s.trim()).filter(Boolean);
 app.use(cors({ origin: (origin, done) => done(null, !origin || allowed.includes(origin)) }));
-app.use(express.json({ limit: "50kb" }));
+// Small bodies everywhere, except the menu save, which carries the whole menu.
+const smallJson = express.json({ limit: "50kb" }), menuJson = express.json({ limit: "1mb" });
+app.use((req, res, next) => (req.method === "PUT" && req.path === "/api/menu" ? menuJson : smallJson)(req, res, next));
+
+// Express 4 does not catch errors thrown inside async handlers; this passes them to the error handler.
+const wrap = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
 app.get("/api/health", async (_req, res) => {
   try { await pool.query("SELECT 1"); res.json({ ok: true }); }
@@ -31,7 +38,35 @@ app.get("/api/menu", async (_req, res) => {
   }
 });
 
-// ---- Orders ----
+// The admin page saves the whole menu here (staff only). It must send the version it loaded.
+app.put("/api/menu", requireAdmin, wrap(async (req, res) => {
+  const { baseVersion, ...menu } = req.body || {};
+  if (!Number.isInteger(baseVersion)) return res.status(400).json({ error: "Missing menu version. Reload the page." });
+  try {
+    res.json({ version: await saveMenu(menu, baseVersion) });
+  } catch (e) {
+    if (e instanceof MenuError) return res.status(e.status).json({ error: e.message });
+    throw e;
+  }
+}));
+
+// ---- Photos (stored in the database) ----
+app.post("/api/images", requireAdmin, express.raw({ type: "image/jpeg", limit: "3mb" }), wrap(async (req, res) => {
+  const b = req.body;
+  if (!Buffer.isBuffer(b) || b.length < 4 || b[0] !== 0xff || b[1] !== 0xd8 || b[2] !== 0xff) return res.status(400).json({ error: "Please send a JPEG photo (up to 3 MB)." });
+  const id = randomBytes(8).toString("hex") + ".jpg";
+  await pool.query("INSERT INTO images (id, content_type, data) VALUES ($1, 'image/jpeg', $2)", [id, b]);
+  res.status(201).json({ path: `/api/images/${id}` });
+}));
+
+app.get("/api/images/:id", wrap(async (req, res) => {
+  if (!/^[a-f0-9]{16}\.jpg$/.test(req.params.id)) return res.status(404).end();
+  const { rows } = await pool.query("SELECT content_type, data FROM images WHERE id = $1", [req.params.id]);
+  if (!rows[0]) return res.status(404).end();
+  res.set({ "Content-Type": rows[0].content_type, "Cache-Control": "public, max-age=31536000, immutable", "X-Content-Type-Options": "nosniff" });
+  res.send(rows[0].data);   // each upload gets a new id, so the cached copy never goes stale
+}));
+
 // ---- Staff login ----
 app.post("/api/auth/login", async (req, res, next) => {
   try {
@@ -83,22 +118,23 @@ app.get("/api/orders/:number/status", limitStatus, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-app.get("/api/orders", requireAdmin, async (req, res) => {
+app.get("/api/orders", requireAdmin, wrap(async (req, res) => {
   const status = req.query.status;
   if (status && !STATUSES.includes(status)) return res.status(400).json({ error: "Unknown status" });
   res.json(await listOrders(status));
-});
+}));
 
-app.patch("/api/orders/:number/status", requireAdmin, async (req, res) => {
+app.patch("/api/orders/:number/status", requireAdmin, wrap(async (req, res) => {
   const status = req.body?.status;
   if (!STATUSES.includes(status)) return res.status(400).json({ error: "Unknown status" });
   const row = await setStatus(Number(req.params.number), status);
   row ? res.json(row) : res.status(404).json({ error: "No such order" });
-});
+}));
 
 app.use((err, _req, res, _next) => {
-  console.error(err);
-  res.status(err.status === 400 ? 400 : 500).json({ error: err.status === 400 ? "Bad request" : "Server error" });
+  const status = err.status >= 400 && err.status < 500 ? err.status : 500;
+  if (status === 500) console.error(err);
+  res.status(status).json({ error: status === 413 ? "That is too large." : status === 500 ? "Server error" : "Bad request" });
 });
 
 await setup();

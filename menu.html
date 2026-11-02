@@ -187,7 +187,8 @@ function picture(src) {
   pic.className = "pic";
   if (/[\/.]/.test(src)) {
     const img = document.createElement("img");
-    img.src = src; img.alt = ""; img.loading = "lazy";
+    img.src = src.startsWith("/api/") ? API_URL + src : src;   // photos uploaded in the admin are served by the API
+    img.alt = ""; img.loading = "lazy";
     pic.appendChild(img);
   } else {
     const em = document.createElement("span");

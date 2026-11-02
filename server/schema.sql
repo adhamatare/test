@@ -50,6 +50,22 @@ CREATE TABLE IF NOT EXISTS bundles (
   position int  NOT NULL DEFAULT 0
 );
 
+-- One row. The admin sends the version it loaded; a save is refused if someone else saved in between.
+CREATE TABLE IF NOT EXISTS menu_meta (
+  id         int PRIMARY KEY CHECK (id = 1),
+  version    int NOT NULL DEFAULT 1,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+INSERT INTO menu_meta (id) VALUES (1) ON CONFLICT DO NOTHING;
+
+-- Photos live in the database because the host's disk is wiped on every restart.
+CREATE TABLE IF NOT EXISTS images (
+  id           text PRIMARY KEY,
+  content_type text NOT NULL,
+  data         bytea NOT NULL,
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS users (
   id            serial PRIMARY KEY,
   username      text NOT NULL,

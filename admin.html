@@ -53,24 +53,14 @@
 <body>
 <main>
   <h1>Menu Admin</h1>
-  <p class="note">Edit prices, discounts and items. <a href="menu.html" target="_blank">Open the menu</a></p>
+  <p class="note">Edit prices, discounts and items. <a href="menu.html" target="_blank">Open the menu</a> &middot; <a href="orders.html" target="_blank">Orders</a></p>
   <div id="login" class="card" hidden>
-    <form id="loginView" hidden>
-      <h3 style="margin-top:0">Sign in</h3>
+    <form id="loginView">
+      <h3 style="margin-top:0">Staff sign in</h3>
       <label>Username<input type="text" id="lUser" autocomplete="username"></label>
       <label>Password<input type="password" id="lPass" autocomplete="current-password"></label>
-      <div class="row"><button type="submit" id="loginBtn">Sign in</button><button type="button" class="ghost" id="resetBtn">Forgot password / start over</button></div>
+      <div class="row"><button type="submit" id="loginBtn">Sign in</button></div>
       <p id="loginMsg" class="err"></p>
-    </form>
-    <form id="setupView" hidden>
-      <h3 style="margin-top:0">Set up the admin login</h3>
-      <p class="note">Pick a username and a password. Your GitHub token is stored on this device only, locked with that password, and you enter it once. The token needs <b>Contents: Read and write</b> on <code>adhamatare/test</code>.</p>
-      <label>Username<input type="text" id="sUser" value="adham" autocomplete="username"></label>
-      <label>Password (at least 8 characters)<input type="password" id="sPass" autocomplete="new-password"></label>
-      <label>Repeat password<input type="password" id="sPass2" autocomplete="new-password"></label>
-      <label>GitHub access token<input type="password" id="sToken" autocomplete="off"></label>
-      <div class="row"><button type="submit" id="setupBtn">Save and sign in</button></div>
-      <p id="setupMsg" class="err"></p>
     </form>
   </div>
   <div id="app" hidden></div>
@@ -78,126 +68,82 @@
 <div id="bar" hidden><span class="msg" id="msg"></span><button id="logout" class="ghost">Log out</button><button id="save">Save changes</button></div>
 
 <script>
-const REPO = "adhamatare/test", BRANCH = "main", PATH = "menu.json";
 const $ = id => document.getElementById(id);
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch {} },
   del(k) { try { localStorage.removeItem(k); } catch {} }
 };
-let token = "", sha = "", data = null, dirty = false;
+// The menu now lives in the database behind the API. Address: ?api=... once, then remembered on this device.
+const params = new URLSearchParams(location.search);
+if (params.get("api")) store.set("apiUrl", params.get("api").replace(/\/+$/, ""));
+const API = store.get("apiUrl") || "http://localhost:3000";
+const picUrl = p => (String(p).startsWith("/api/") ? API + p : p);   // photos uploaded through the API live on the server
+
+let token = "", version = 0, data = null, dirty = false;
+try { token = sessionStorage.getItem("adminToken") || ""; } catch {}   // kept only while this tab is open
 let searchTerm = "";
-let adminTab = store.get("adminTab") || "settings";   // the tab you were on is remembered on this device   // the token only ever lives in memory; on disk it is locked with the password
+let adminTab = store.get("adminTab") || "settings";   // the tab you were on is remembered on this device
 
 // Settings added after the first release; missing ones are filled in when the menu loads.
 const dayDefaults = () => Object.fromEntries(["mon", "tue", "wed", "thu", "fri", "sat", "sun"].map(d => [d, { closed: false, open: "09:00", close: "23:00" }]));
 const DEFAULT_SETTINGS = { currency: "$", deliveryFee: 0, whatsapp: "", timezone: "Asia/Jerusalem", useHours: false, pauseOrders: false, minDeliveryOrder: 0, freeDeliveryOver: 0, deliveryAreas: [] };
 
-const gh = (url, opts = {}) => fetch("https://api.github.com" + url, {
-  ...opts,
-  headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", ...(opts.headers || {}) }
-});
-
-const decode = b64 => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\s/g, "")), c => c.charCodeAt(0)));
-const encode = text => { let s = ""; for (const b of new TextEncoder().encode(text)) s += String.fromCharCode(b); return btoa(s); };
+// Talks to the menu API. A 401 means the staff session ended: ask for the password again but keep the edits on screen.
+const api = async (path, opts = {}) => {
+  const res = await fetch(API + path, { ...opts, headers: { ...(token ? { Authorization: "Bearer " + token } : {}), ...(opts.headers || {}) } });
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 401 && token) { expired(); throw new Error("Your session ended. Sign in again."); }
+  if (!res.ok) throw new Error(body.error || "Something went wrong (" + res.status + ").");
+  return body;
+};
+const netMsg = e => (e instanceof TypeError ? "Cannot reach the server at " + API + "." : e.message);
 
 function say(text, cls = "") { const m = $("msg"); m.textContent = text; m.className = "msg " + cls; }
 const finalPrice = it => Math.round(it.price * (100 - (it.discount || 0))) / 100;
 
-// Checks the token against GitHub and loads the menu. Throws a readable error when it can't.
+// Loads the menu from the database. Needs a signed-in session.
 async function connect() {
-  const repo = await gh(`/repos/${REPO}`);
-  if (repo.status === 401) throw new Error("GitHub did not accept that token. It may have expired.");
-  if (!repo.ok) throw new Error("Cannot open the repository with this token.");
-  if (!(await repo.json()).permissions?.push) throw new Error("This token can only read. It needs Contents: Read and write.");
-  const res = await gh(`/repos/${REPO}/contents/${PATH}?ref=${BRANCH}`);
-  if (!res.ok) throw new Error("Could not load menu.json (" + res.status + ").");
-  const file = await res.json();
-  sha = file.sha;
-  data = JSON.parse(decode(file.content));
+  await api("/api/auth/me");
+  const m = await api("/api/menu");
+  version = m.version; delete m.version;
+  data = m;
   const s = data.settings || {};
   data.settings = { ...DEFAULT_SETTINGS, ...s, hours: { ...dayDefaults(), ...(s.hours || {}) } };
+  data.bundles = data.bundles || [];
   $("login").hidden = true; $("app").hidden = false; $("bar").hidden = false;
   dirty = false; say("Loaded the current menu.");
   build();
 }
 
-// ---- Login: username + password unlock the saved GitHub token (AES-GCM, key from PBKDF2) ----
-const b64 = bytes => btoa(String.fromCharCode(...bytes));
-const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
-
-async function deriveKey(password, salt, iterations) {
-  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
-  return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
-}
-
-async function lockToken(user, password, tok) {
-  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), iter = 600000;
-  const key = await deriveKey(password, salt, iter);
-  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(tok)));
-  return { user, salt: b64(salt), iv: b64(iv), ct: b64(ct), iter };
-}
-
-async function unlockToken(vault, password) {
-  const key = await deriveKey(password, unb64(vault.salt), vault.iter);
-  return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(vault.iv) }, key, unb64(vault.ct)));
-}
-
-let failures = 0, lockedUntil = 0;
-
-function showAuth() {
-  const vault = JSON.parse(store.get("adminVault") || "null");
+// ---- Staff sign in (same accounts as the Orders page) ----
+function expired() {
+  token = ""; try { sessionStorage.removeItem("adminToken"); } catch {}
   $("login").hidden = false;
-  $("loginView").hidden = !vault;
-  $("setupView").hidden = !!vault;
-  if (vault) $("lUser").value = vault.user;
-  else if (store.get("ghToken")) $("sToken").value = store.get("ghToken");   // token saved by the earlier version: lock it with a password
+  $("lUser").value = store.get("adminUser") || "";
+  $("loginMsg").textContent = data ?"Your session ended. Sign in to continue; your edits are still here." : "";
 }
 
 $("loginView").onsubmit = async e => {
   e.preventDefault();
   const msg = $("loginMsg");
-  if (Date.now() < lockedUntil) { msg.textContent = "Too many attempts. Wait a few seconds and try again."; return; }
-  const vault = JSON.parse(store.get("adminVault") || "null");
-  $("loginBtn").disabled = true; msg.textContent = "";
+  msg.textContent = ""; $("loginBtn").disabled = true;
   try {
-    if ($("lUser").value.trim().toLowerCase() !== vault.user.toLowerCase()) throw new Error("bad");
-    token = await unlockToken(vault, $("lPass").value);
-  } catch {
-    failures++;
-    if (failures >= 5) { lockedUntil = Date.now() + 30000; failures = 0; }
-    msg.textContent = "Wrong username or password.";
-    $("loginBtn").disabled = false;
-    return;
-  }
-  failures = 0; $("lPass").value = "";
-  try { await connect(); } catch (err) { token = ""; msg.textContent = err.message + " Use \"Forgot password / start over\" to enter a new token."; }
+    const user = $("lUser").value.trim();
+    const s = await api("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: user, password: $("lPass").value }) });
+    token = s.token; try { sessionStorage.setItem("adminToken", token); } catch {}
+    store.set("adminUser", user);
+    $("lPass").value = "";
+    if (data) { $("login").hidden = true; say("Signed in again. Press Save changes."); }   // edits are still on screen
+    else await connect();
+  } catch (err) { msg.textContent = netMsg(err); }
   $("loginBtn").disabled = false;
 };
 
-$("setupView").onsubmit = async e => {
-  e.preventDefault();
-  const msg = $("setupMsg"), user = $("sUser").value.trim(), pass = $("sPass").value, tok = $("sToken").value.trim();
-  msg.textContent = "";
-  if (!user) { msg.textContent = "Enter a username."; return; }
-  if (pass.length < 8) { msg.textContent = "The password needs at least 8 characters."; return; }
-  if (pass !== $("sPass2").value) { msg.textContent = "The two passwords don't match."; return; }
-  if (!tok) { msg.textContent = "Paste your GitHub access token."; return; }
-  $("setupBtn").disabled = true; msg.textContent = "Checking the token...";
-  token = tok;
-  try {
-    await connect();
-    store.set("adminVault", JSON.stringify(await lockToken(user, pass, tok)));
-    store.del("ghToken");
-    $("sPass").value = $("sPass2").value = $("sToken").value = "";
-  } catch (err) { token = ""; msg.textContent = err.message; }
-  $("setupBtn").disabled = false;
-};
-
-$("resetBtn").onclick = () => {
-  if (!confirm("This removes the saved login and token from this device. You will need your GitHub token again. Continue?")) return;
-  store.del("adminVault"); store.del("ghToken"); location.reload();
-};
+function showAuth() {
+  $("login").hidden = false;
+  $("lUser").value = store.get("adminUser") || "";
+}
 
 // ---- Editor ----
 function field(label, obj, key, { type = "text", wide = false, ...attrs } = {}) {
@@ -253,7 +199,7 @@ function itemCard(sec, it, opts = {}) {
   const showThumb = () => {
     thumb.innerHTML = "";
     const p = it.pic || "";
-    if (/[\/.]/.test(p)) { const img = document.createElement("img"); img.src = previews[p] || p; img.alt = ""; thumb.append(img); }
+    if (/[\/.]/.test(p)) { const img = document.createElement("img"); img.src = previews[p] || picUrl(p); img.alt = ""; thumb.append(img); }
     else thumb.textContent = p;
   };
   showThumb();
@@ -519,7 +465,7 @@ function build() {
     const showThumb = () => {
       thumb.innerHTML = "";
       const p = b.pic || "";
-      if (/[\/.]/.test(p)) { const img = document.createElement("img"); img.src = previews[p] || p; img.alt = ""; thumb.append(img); } else thumb.textContent = p;
+      if (/[\/.]/.test(p)) { const img = document.createElement("img"); img.src = previews[p] || picUrl(p); img.alt = ""; thumb.append(img); } else thumb.textContent = p;
     };
     showThumb();
     picInput.addEventListener("input", showThumb);
@@ -662,7 +608,7 @@ function build() {
 }
 
 // ---- Photos ----
-const previews = {};   // uploaded path -> local blob URL, so the preview shows before the site redeploys
+const previews = {};   // uploaded path -> local blob URL, so the preview shows at once
 
 // Shrinks the photo (max 800px, JPEG) so phone pictures stay small and load fast on the menu.
 async function toJpeg(file, max = 800, quality = 0.82) {
@@ -677,24 +623,19 @@ async function toJpeg(file, max = 800, quality = 0.82) {
   return new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", quality));
 }
 
-const toBase64 = blob => new Promise((resolve, reject) => {
-  const r = new FileReader();
-  r.onload = () => resolve(String(r.result).split(",")[1]);
-  r.onerror = () => reject(new Error("Could not read the photo."));
-  r.readAsDataURL(blob);
-});
-
-async function uploadPhoto(file, it) {
+// Uploads the photo to the server (stored in the database) and returns its path, e.g. /api/images/ab12cd34ef56ab12.jpg
+async function uploadPhoto(file) {
   if (!file.type.startsWith("image/")) throw new Error("Please choose an image file.");
   if (file.size > 25 * 1024 * 1024) throw new Error("That photo is too large (25 MB max).");
   const blob = await toJpeg(file);
-  const path = `images/${it.id}-${Date.now().toString(36)}.jpg`;
-  const res = await gh(`/repos/${REPO}/contents/${path}`, {
-    method: "PUT",
-    body: JSON.stringify({ message: `Add photo for ${it.en || it.id}`, content: await toBase64(blob), branch: BRANCH })
-  });
-  if (!res.ok) throw new Error("Photo upload failed (" + res.status + ").");
-  return { path, url: URL.createObjectURL(blob) };
+  if (blob.size > 3 * 1024 * 1024) throw new Error("That photo is still too large after shrinking. Try a smaller one.");
+  let res;
+  try { res = await fetch(API + "/api/images", { method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "image/jpeg" }, body: blob }); }
+  catch (e) { throw new Error(netMsg(e)); }
+  const out = await res.json().catch(() => ({}));
+  if (res.status === 401) { expired(); throw new Error("Your session ended. Sign in again, then upload the photo again."); }
+  if (!res.ok) throw new Error(out.error || "Photo upload failed (" + res.status + ").");
+  return { path: out.path, url: URL.createObjectURL(blob) };
 }
 
 // ---- Save ----
@@ -731,21 +672,12 @@ async function save() {
   if (problem) { say(problem, "err"); return; }
   $("save").disabled = true; say("Saving...");
   try {
-    const res = await gh(`/repos/${REPO}/contents/${PATH}`, {
-      method: "PUT",
-      body: JSON.stringify({
-        message: "Update menu from admin page",
-        content: encode(JSON.stringify(data, null, 2) + "\n"),
-        sha, branch: BRANCH
-      })
-    });
-    if (res.status === 409 || res.status === 422) throw new Error("The menu was changed somewhere else. Reload this page and try again.");
-    if (!res.ok) throw new Error("Save failed (" + res.status + ").");
-    sha = (await res.json()).content.sha;
+    const out = await api("/api/menu", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...data, baseVersion: version }) });
+    version = out.version;
     dirty = false;
-    say("Saved. The live menu updates in about a minute.", "ok");
+    say("Saved. Customers see the change straight away.", "ok");
   } catch (e) {
-    say(e.message, "err");
+    say(netMsg(e), "err");
   }
   $("save").disabled = false;
 }
@@ -753,10 +685,18 @@ async function save() {
 let refreshSummary = null;
 $("app").addEventListener("change", () => { if (refreshSummary) refreshSummary(); });
 $("save").onclick = save;
-$("logout").onclick = () => { if (dirty && !confirm("Discard unsaved changes?")) return; dirty = false; location.reload(); };
+$("logout").onclick = async () => {
+  if (dirty && !confirm("Discard unsaved changes?")) return;
+  dirty = false;
+  try { await fetch(API + "/api/auth/logout", { method: "POST", headers: { Authorization: "Bearer " + token } }); } catch {}
+  try { sessionStorage.removeItem("adminToken"); } catch {}
+  location.reload();
+};
 window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
-showAuth();
+// Already signed in on this tab? Go straight to the menu. Otherwise ask for the password.
+if (token) connect().catch(err => { showAuth(); $("loginMsg").textContent = err.message.startsWith("Your session") ? "" : netMsg(err); });
+else showAuth();
 </script>
 </body>
 </html>
