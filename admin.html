@@ -25,6 +25,10 @@
   .thumb { width: 64px; height: 64px; border-radius: 12px; background: #efe5d6; display: flex; align-items: center; justify-content: center; font-size: 34px; overflow: hidden; flex: none; }
   .thumb img { width: 100%; height: 100%; object-fit: cover; }
   .special { font-weight: 700; color: #c0392b; align-self: end; padding-bottom: 10px; }
+  [hidden] { display: none !important; }
+  .search { display: flex; gap: 8px; align-items: center; }
+  .search input { flex: 1; box-sizing: border-box; padding: 11px; font-size: 16px; border: 1px solid #c9bba8; border-radius: 8px; }
+  .crumb { font-size: 13px; color: #7a6a58; margin: 14px 0 -6px; }
   .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; padding: 8px 0; position: sticky; top: 0; z-index: 5; background: #faf7f2; }
   .tabs button { background: #e8dfd3; color: #2b2118; border-radius: 999px; padding: 10px 18px; }
   .tabs button.active { background: #6b3f1d; color: #fff; }
@@ -77,6 +81,7 @@ const store = {
   del(k) { try { localStorage.removeItem(k); } catch {} }
 };
 let token = "", sha = "", data = null, dirty = false;
+let searchTerm = "";
 let adminTab = store.get("adminTab") || "settings";   // the tab you were on is remembered on this device   // the token only ever lives in memory; on disk it is locked with the password
 
 // Settings added after the first release; missing ones are filled in when the menu loads.
@@ -332,7 +337,40 @@ function build() {
     p.hidden = id !== adminTab;
     panels[id] = p;
   }
-  app.append(tabBar, ...Object.values(panels));
+  // Search across every venue and category; results replace the tabs while a search is active.
+  const searchBox = document.createElement("div");
+  searchBox.className = "card search";
+  const searchInput = document.createElement("input");
+  searchInput.type = "search"; searchInput.value = searchTerm;
+  searchInput.placeholder = "Search items by name, description or category";
+  searchInput.setAttribute("aria-label", "Search items");
+  const results = document.createElement("div");
+  const applySearch = () => {
+    searchTerm = searchInput.value;
+    const q = searchTerm.trim().toLowerCase();
+    tabBar.hidden = !!q;
+    for (const [pid, p] of Object.entries(panels)) p.hidden = !!q || pid !== adminTab;
+    results.innerHTML = "";
+    results.hidden = !q;
+    if (!q) return;
+    let found = 0;
+    for (const v of data.venues) for (const sec of v.sections) for (const it of sec.items) {
+      if (![it.en, it.ar, it.dEn, it.dAr, sec.en, sec.ar, v.key, v.ar].some(x => (x || "").toLowerCase().includes(q))) continue;
+      found++;
+      const crumb = document.createElement("div");
+      crumb.className = "crumb";
+      crumb.textContent = `${v.key} › ${sec.en}`;
+      results.append(crumb, itemCard(sec, it));
+    }
+    const count = document.createElement("p");
+    count.className = "note";
+    count.textContent = found ? `${found} item${found === 1 ? "" : "s"} found` : "No items match your search.";
+    results.prepend(count);
+  };
+  searchInput.oninput = applySearch;
+  searchBox.append(searchInput, btn("Clear", "ghost", () => { searchInput.value = ""; applySearch(); searchInput.focus(); }));
+  app.append(searchBox, tabBar, ...Object.values(panels), results);
+  applySearch();
 
   const s = data.settings;
   const sc = document.createElement("div");
