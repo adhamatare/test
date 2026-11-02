@@ -90,7 +90,7 @@
               "discount": 0,
               "pic": "images/i3-mvyktvvh.jpg",
               "isNew": false,
-              "soldOut": true
+              "soldOut": false
             }
           ]
         },
