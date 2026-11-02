@@ -23,7 +23,7 @@
               "discount": 0,
               "pic": "🍲",
               "isNew": false,
-              "soldOut": true
+              "soldOut": false
             },
             {
               "id": "i2",
@@ -34,7 +34,8 @@
               "price": 7,
               "discount": 0,
               "pic": "🥗",
-              "isNew": false
+              "isNew": true,
+              "soldOut": true
             },
             {
               "id": "i3",
