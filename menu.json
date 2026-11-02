@@ -1,45 +1,265 @@
 {
-  "settings": { "currency": "$", "deliveryFee": 3, "whatsapp": "972522866414" },
+  "settings": {
+    "currency": "$",
+    "deliveryFee": 3,
+    "whatsapp": "972522866414"
+  },
   "venues": [
     {
-      "key": "Restaurant", "ar": "المطعم",
+      "key": "Restaurant",
+      "ar": "المطعم",
       "sections": [
-        { "en": "Starters", "ar": "المقبلات", "items": [
-          { "id": "i1", "en": "Lentil Soup", "ar": "شوربة عدس", "dEn": "Red lentils, lemon, cumin", "dAr": "عدس أحمر وليمون وكمون", "price": 4.5, "discount": 0, "pic": "🍲", "isNew": false },
-          { "id": "i2", "en": "Caesar Salad", "ar": "سلطة سيزر", "dEn": "Romaine, parmesan, croutons", "dAr": "خس وبارميزان وخبز محمص", "price": 7, "discount": 0, "pic": "🥗", "isNew": false },
-          { "id": "i3", "en": "Hummus Plate", "ar": "طبق حمص", "dEn": "With warm pita", "dAr": "مع خبز بلدي ساخن", "price": 5.5, "discount": 0, "pic": "🫓", "isNew": false }
-        ]},
-        { "en": "Mains", "ar": "الأطباق الرئيسية", "items": [
-          { "id": "i4", "en": "Grilled Chicken", "ar": "دجاج مشوي", "dEn": "Herb marinade, rice, vegetables", "dAr": "متبل بالأعشاب مع أرز وخضار", "price": 13, "discount": 0, "pic": "🍗", "isNew": false },
-          { "id": "i5", "en": "Beef Burger", "ar": "برجر لحم", "dEn": "Cheddar, fries", "dAr": "جبنة شيدر وبطاطس", "price": 12, "discount": 15, "pic": "🍔", "isNew": false },
-          { "id": "i6", "en": "Pasta Alfredo", "ar": "باستا ألفريدو", "dEn": "Creamy parmesan sauce", "dAr": "صلصة كريمية بالبارميزان", "price": 11, "discount": 0, "pic": "🍝", "isNew": false },
-          { "id": "i7", "en": "Grilled Salmon", "ar": "سلمون مشوي", "dEn": "Lemon butter, seasonal greens", "dAr": "زبدة وليمون مع خضار الموسم", "price": 16, "discount": 0, "pic": "🐟", "isNew": true }
-        ]},
-        { "en": "Desserts", "ar": "الحلويات", "items": [
-          { "id": "i8", "en": "Cheesecake", "ar": "تشيز كيك", "dEn": "Classic New York style", "dAr": "على الطريقة الكلاسيكية", "price": 6, "discount": 0, "pic": "🍰", "isNew": false },
-          { "id": "i9", "en": "Chocolate Lava Cake", "ar": "كيك الشوكولاتة", "dEn": "Warm center, vanilla ice cream", "dAr": "قلب دافئ مع آيس كريم فانيليا", "price": 6.5, "discount": 0, "pic": "🍫", "isNew": false }
-        ]}
+        {
+          "en": "Starters",
+          "ar": "المقبلات",
+          "items": [
+            {
+              "id": "i1",
+              "en": "Lentil Soup",
+              "ar": "شوربة عدس",
+              "dEn": "Red lentils, lemon, cumin",
+              "dAr": "عدس أحمر وليمون وكمون",
+              "price": 5,
+              "discount": 0,
+              "pic": "🍲",
+              "isNew": true
+            },
+            {
+              "id": "i2",
+              "en": "Caesar Salad",
+              "ar": "سلطة سيزر",
+              "dEn": "Romaine, parmesan, croutons",
+              "dAr": "خس وبارميزان وخبز محمص",
+              "price": 7,
+              "discount": 0,
+              "pic": "🥗",
+              "isNew": true
+            },
+            {
+              "id": "i3",
+              "en": "Hummus Plate",
+              "ar": "طبق حمص",
+              "dEn": "With warm pita",
+              "dAr": "مع خبز بلدي ساخن",
+              "price": 5.5,
+              "discount": 0,
+              "pic": "🫓",
+              "isNew": true
+            }
+          ]
+        },
+        {
+          "en": "Mains",
+          "ar": "الأطباق الرئيسية",
+          "items": [
+            {
+              "id": "i4",
+              "en": "Grilled Chicken",
+              "ar": "دجاج مشوي",
+              "dEn": "Herb marinade, rice, vegetables",
+              "dAr": "متبل بالأعشاب مع أرز وخضار",
+              "price": 13,
+              "discount": 0,
+              "pic": "🍗",
+              "isNew": false
+            },
+            {
+              "id": "i5",
+              "en": "Beef Burger",
+              "ar": "برجر لحم",
+              "dEn": "Cheddar, fries",
+              "dAr": "جبنة شيدر وبطاطس",
+              "price": 12,
+              "discount": 15,
+              "pic": "🍔",
+              "isNew": false
+            },
+            {
+              "id": "i6",
+              "en": "Pasta Alfredo",
+              "ar": "باستا ألفريدو",
+              "dEn": "Creamy parmesan sauce",
+              "dAr": "صلصة كريمية بالبارميزان",
+              "price": 11,
+              "discount": 0,
+              "pic": "🍝",
+              "isNew": false
+            },
+            {
+              "id": "i7",
+              "en": "Grilled Salmon",
+              "ar": "سلمون مشوي",
+              "dEn": "Lemon butter, seasonal greens",
+              "dAr": "زبدة وليمون مع خضار الموسم",
+              "price": 16,
+              "discount": 0,
+              "pic": "🐟",
+              "isNew": true
+            }
+          ]
+        },
+        {
+          "en": "Desserts",
+          "ar": "الحلويات",
+          "items": [
+            {
+              "id": "i8",
+              "en": "Cheesecake",
+              "ar": "تشيز كيك",
+              "dEn": "Classic New York style",
+              "dAr": "على الطريقة الكلاسيكية",
+              "price": 6,
+              "discount": 0,
+              "pic": "🍰",
+              "isNew": false
+            },
+            {
+              "id": "i9",
+              "en": "Chocolate Lava Cake",
+              "ar": "كيك الشوكولاتة",
+              "dEn": "Warm center, vanilla ice cream",
+              "dAr": "قلب دافئ مع آيس كريم فانيليا",
+              "price": 6.5,
+              "discount": 0,
+              "pic": "🍫",
+              "isNew": false
+            }
+          ]
+        }
       ]
     },
     {
-      "key": "Coffee Shop", "ar": "الكافيه",
+      "key": "Coffee Shop",
+      "ar": "الكافيه",
       "sections": [
-        { "en": "Hot Drinks", "ar": "مشروبات ساخنة", "items": [
-          { "id": "i10", "en": "Espresso", "ar": "إسبريسو", "dEn": "Double shot", "dAr": "شوت مزدوج", "price": 2.5, "discount": 0, "pic": "☕", "isNew": false },
-          { "id": "i11", "en": "Cappuccino", "ar": "كابتشينو", "dEn": "Steamed milk foam", "dAr": "رغوة حليب", "price": 3.5, "discount": 0, "pic": "☕", "isNew": false },
-          { "id": "i12", "en": "Latte", "ar": "لاتيه", "dEn": "Smooth and milky", "dAr": "ناعم بالحليب", "price": 3.8, "discount": 10, "pic": "🥛", "isNew": false },
-          { "id": "i13", "en": "Hot Chocolate", "ar": "شوكولاتة ساخنة", "dEn": "With whipped cream", "dAr": "مع الكريمة", "price": 3.5, "discount": 0, "pic": "🍫", "isNew": false }
-        ]},
-        { "en": "Cold Drinks", "ar": "مشروبات باردة", "items": [
-          { "id": "i14", "en": "Iced Latte", "ar": "آيس لاتيه", "dEn": "Over ice", "dAr": "مع الثلج", "price": 4, "discount": 0, "pic": "🧊", "isNew": false },
-          { "id": "i15", "en": "Cold Brew", "ar": "كولد برو", "dEn": "Steeped 18 hours", "dAr": "منقوع ١٨ ساعة", "price": 4, "discount": 0, "pic": "🥤", "isNew": true },
-          { "id": "i16", "en": "Fresh Orange Juice", "ar": "عصير برتقال طازج", "dEn": "Squeezed to order", "dAr": "يُعصر عند الطلب", "price": 4.5, "discount": 0, "pic": "🍊", "isNew": false }
-        ]},
-        { "en": "Bakery", "ar": "مخبوزات", "items": [
-          { "id": "i17", "en": "Butter Croissant", "ar": "كرواسون بالزبدة", "dEn": "Baked daily", "dAr": "يُخبز يوميًا", "price": 3, "discount": 0, "pic": "🥐", "isNew": false },
-          { "id": "i18", "en": "Blueberry Muffin", "ar": "مافن التوت", "dEn": "", "dAr": "", "price": 3.2, "discount": 0, "pic": "🧁", "isNew": false },
-          { "id": "i19", "en": "Banana Bread", "ar": "كيك الموز", "dEn": "", "dAr": "", "price": 3.5, "discount": 0, "pic": "🍞", "isNew": false }
-        ]}
+        {
+          "en": "Hot Drinks",
+          "ar": "مشروبات ساخنة",
+          "items": [
+            {
+              "id": "i10",
+              "en": "Espresso",
+              "ar": "إسبريسو",
+              "dEn": "Double shot",
+              "dAr": "شوت مزدوج",
+              "price": 2.5,
+              "discount": 0,
+              "pic": "☕",
+              "isNew": false
+            },
+            {
+              "id": "i11",
+              "en": "Cappuccino",
+              "ar": "كابتشينو",
+              "dEn": "Steamed milk foam",
+              "dAr": "رغوة حليب",
+              "price": 3.5,
+              "discount": 0,
+              "pic": "☕",
+              "isNew": false
+            },
+            {
+              "id": "i12",
+              "en": "Latte",
+              "ar": "لاتيه",
+              "dEn": "Smooth and milky",
+              "dAr": "ناعم بالحليب",
+              "price": 3.8,
+              "discount": 10,
+              "pic": "🥛",
+              "isNew": false
+            },
+            {
+              "id": "i13",
+              "en": "Hot Chocolate",
+              "ar": "شوكولاتة ساخنة",
+              "dEn": "With whipped cream",
+              "dAr": "مع الكريمة",
+              "price": 3.5,
+              "discount": 0,
+              "pic": "🍫",
+              "isNew": false
+            }
+          ]
+        },
+        {
+          "en": "Cold Drinks",
+          "ar": "مشروبات باردة",
+          "items": [
+            {
+              "id": "i14",
+              "en": "Iced Latte",
+              "ar": "آيس لاتيه",
+              "dEn": "Over ice",
+              "dAr": "مع الثلج",
+              "price": 4,
+              "discount": 0,
+              "pic": "🧊",
+              "isNew": false
+            },
+            {
+              "id": "i15",
+              "en": "Cold Brew",
+              "ar": "كولد برو",
+              "dEn": "Steeped 18 hours",
+              "dAr": "منقوع ١٨ ساعة",
+              "price": 4,
+              "discount": 0,
+              "pic": "🥤",
+              "isNew": true
+            },
+            {
+              "id": "i16",
+              "en": "Fresh Orange Juice",
+              "ar": "عصير برتقال طازج",
+              "dEn": "Squeezed to order",
+              "dAr": "يُعصر عند الطلب",
+              "price": 4.5,
+              "discount": 0,
+              "pic": "🍊",
+              "isNew": false
+            }
+          ]
+        },
+        {
+          "en": "Bakery",
+          "ar": "مخبوزات",
+          "items": [
+            {
+              "id": "i17",
+              "en": "Butter Croissant",
+              "ar": "كرواسون بالزبدة",
+              "dEn": "Baked daily",
+              "dAr": "يُخبز يوميًا",
+              "price": 3,
+              "discount": 0,
+              "pic": "🥐",
+              "isNew": false
+            },
+            {
+              "id": "i18",
+              "en": "Blueberry Muffin",
+              "ar": "مافن التوت",
+              "dEn": "",
+              "dAr": "",
+              "price": 3.2,
+              "discount": 0,
+              "pic": "🧁",
+              "isNew": false
+            },
+            {
+              "id": "i19",
+              "en": "Banana Bread",
+              "ar": "كيك الموز",
+              "dEn": "",
+              "dAr": "",
+              "price": 3.5,
+              "discount": 0,
+              "pic": "🍞",
+              "isNew": false
+            }
+          ]
+        }
       ]
     }
   ]
