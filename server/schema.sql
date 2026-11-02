@@ -87,13 +87,13 @@ CREATE TABLE IF NOT EXISTS orders (
   total        numeric(10,2) NOT NULL,
   created_at   timestamptz NOT NULL DEFAULT now()
 );
--- Order status: open > picked > in_progress > ready > completed (or cancelled).
--- This block also upgrades databases created with the first set of status names.
+-- Order status: open > picked > in_progress > ready (ready for pickup), or cancelled.
+-- This block also upgrades databases created with earlier status names.
 ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
-UPDATE orders SET status = CASE status WHEN 'new' THEN 'open' WHEN 'preparing' THEN 'in_progress' WHEN 'done' THEN 'completed' END
- WHERE status IN ('new', 'preparing', 'done');
+UPDATE orders SET status = CASE status WHEN 'new' THEN 'open' WHEN 'preparing' THEN 'in_progress' ELSE 'ready' END
+ WHERE status IN ('new', 'preparing', 'done', 'completed');
 ALTER TABLE orders ALTER COLUMN status SET DEFAULT 'open';
-ALTER TABLE orders ADD CONSTRAINT orders_status_check CHECK (status IN ('open','picked','in_progress','ready','completed','cancelled'));
+ALTER TABLE orders ADD CONSTRAINT orders_status_check CHECK (status IN ('open','picked','in_progress','ready','cancelled'));
 
 -- Secret the customer's browser holds, so only they can look up their order's status.
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS track_token text NOT NULL DEFAULT replace(gen_random_uuid()::text, '-', '');

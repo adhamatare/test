@@ -93,11 +93,11 @@ const UI = {
   en: { title: "Our Menu", table: "Table", add: "Add", offers: "Special offers", combos: "Combo offers", save: "Save", youSave: "You save", unavailable: "Unavailable", includes: "Includes", new: "NEW", soldOut: "Sold out", cart: "View order", order: "Your order", tableNo: "Table number", name: "Your name", customer: "Customer", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", free: "Free", phone: "Phone number", address: "Delivery address", area: "Delivery area", pickArea: "Select your area", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", orderNo: "Order", lang: "العربية",
         closed: "We're closed right now", paused: "Online ordering is paused right now", todayHours: "Today's hours", closedToday: "Closed today", minOrder: "Minimum order for delivery is", badPhone: "Please enter a valid phone number", needArea: "Please select your delivery area",
         confirmTitle: "Almost done!", confirmText: "WhatsApp opened with your order. Press Send in WhatsApp to place it. Your order is NOT placed until you send the message.", openAgain: "Open WhatsApp again", sent: "I sent it", back: "Back to my order", thanks: "Thank you! We received your order message.", keep: "Keep this order number", done: "Done", trackTitle: "Order status", hide: "Hide",
-        st: { open: "Open", picked: "Picked", in_progress: "In progress", ready: { takeaway: "Ready for pickup", dinein: "Ready to serve", delivery: "Ready for delivery" }, completed: "Completed", cancelled: "Cancelled" } },
+        st: { open: "Open", picked: "Picked", in_progress: "In progress", ready: { takeaway: "Ready for pickup", dinein: "Ready to serve", delivery: "Ready for delivery" }, cancelled: "Cancelled" } },
   ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", offers: "العروض", combos: "عروض الكومبو", save: "وفّر", youSave: "وفّرت", unavailable: "غير متوفر", includes: "يشمل", new: "جديد", soldOut: "نفدت الكمية", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", name: "اسمك", customer: "العميل", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", free: "مجاني", phone: "رقم الهاتف", address: "عنوان التوصيل", area: "منطقة التوصيل", pickArea: "اختر منطقتك", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", orderNo: "الطلب", lang: "English",
         closed: "نحن مغلقون الآن", paused: "الطلب عبر الإنترنت متوقف مؤقتًا", todayHours: "ساعات اليوم", closedToday: "مغلق اليوم", minOrder: "الحد الأدنى لطلب التوصيل", badPhone: "يرجى إدخال رقم هاتف صحيح", needArea: "يرجى اختيار منطقة التوصيل",
         confirmTitle: "أوشكنا على الانتهاء!", confirmText: "فتح واتساب مع طلبك. اضغط إرسال في واتساب لتأكيد الطلب. لن يتم تسجيل طلبك حتى ترسل الرسالة.", openAgain: "افتح واتساب مرة أخرى", sent: "أرسلتها", back: "العودة إلى طلبي", thanks: "شكرًا لك! وصلتنا رسالة طلبك.", keep: "احتفظ برقم الطلب", done: "تم", trackTitle: "حالة الطلب", hide: "إخفاء",
-        st: { open: "مفتوح", picked: "تم الاستلام", in_progress: "قيد التحضير", ready: { takeaway: "جاهز للاستلام", dinein: "جاهز للتقديم", delivery: "جاهز للتوصيل" }, completed: "مكتمل", cancelled: "ملغي" } }
+        st: { open: "مفتوح", picked: "تم الاستلام", in_progress: "قيد التحضير", ready: { takeaway: "جاهز للاستلام", dinein: "جاهز للتقديم", delivery: "جاهز للتوصيل" }, cancelled: "ملغي" } }
 };
 
 // Menu content comes from menu.json (edited through admin.html).
@@ -250,9 +250,11 @@ function restoreCart() {
 }
 
 // ---- Order status (only for orders saved on the backend) ----
-const STEPS = ["open", "picked", "in_progress", "ready", "completed"];
+const STEPS = ["open", "picked", "in_progress", "ready"];
+const isFinal = s => s === "ready" || s === "cancelled";
 let track = null;   // { id, token, api, type, status, at }
 try { track = JSON.parse(store.get("track_v1") || "null"); } catch {}
+if (track && track.status === "completed") track.status = "ready";   // saved before "completed" was removed
 if (track && Date.now() - track.at > 12 * 3600e3) { track = null; store.del("track_v1"); }
 
 function startTrack(saved) {
@@ -264,7 +266,7 @@ function startTrack(saved) {
 function dropTrack() { track = null; store.del("track_v1"); renderTrack(); }
 
 async function pollTrack() {
-  if (!track || track.status === "completed" || track.status === "cancelled") return;
+  if (!track || isFinal(track.status)) return;
   try {
     const r = await fetch(`${track.api}/api/orders/${track.id}/status?t=${encodeURIComponent(track.token)}`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
     if (r.status === 404) return dropTrack();
@@ -286,7 +288,7 @@ function renderTrack() {
   const title = document.createElement("span");
   title.textContent = `${t("trackTitle")} - ${t("orderNo")} #${track.id}`;
   top.appendChild(title);
-  if (track.status === "completed" || track.status === "cancelled") {
+  if (isFinal(track.status)) {
     const x = document.createElement("button"); x.className = "x"; x.textContent = "×"; x.setAttribute("aria-label", t("hide")); x.onclick = dropTrack;
     top.appendChild(x);
   }

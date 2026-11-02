@@ -3,7 +3,7 @@ import { loadMenu } from "./menu.js";
 
 const DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 const TYPES = ["dinein", "takeaway", "delivery"];
-export const STATUSES = ["open", "picked", "in_progress", "ready", "completed", "cancelled"];
+export const STATUSES = ["open", "picked", "in_progress", "ready", "cancelled"];
 
 const round2 = n => Math.round(n * 100) / 100;
 const finalPrice = it => Math.round(it.price * (100 - (it.discount || 0))) / 100;

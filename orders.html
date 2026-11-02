@@ -63,10 +63,10 @@ const mem = {
 if (params.get("api")) mem.set("ordersApi", params.get("api").replace(/\/+$/, ""));
 const API = mem.get("ordersApi") || "http://localhost:3000";
 
-const STATUS = [["open", "Open"], ["picked", "Picked"], ["in_progress", "In progress"], ["ready", "Ready"], ["completed", "Completed"]];
+const STATUS = [["open", "Open"], ["picked", "Picked"], ["in_progress", "In progress"], ["ready", "Ready for pickup"]];
 const NAMES = Object.fromEntries([...STATUS, ["cancelled", "Cancelled"]]);
 const TYPES = { dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery" };
-const FILTERS = [["active", "Active"], ["completed", "Completed"], ["cancelled", "Cancelled"], ["all", "All"]];
+const FILTERS = [["active", "Active"], ["ready", "Ready"], ["cancelled", "Cancelled"], ["all", "All"]];
 
 let token = mem.get("ordersToken", true);   // kept only while this tab is open
 let filter = "active", orders = [], busy = new Set();
@@ -117,7 +117,7 @@ async function load() {
   } catch (e) { if (e.message !== "signed out") $("stamp").textContent = "Cannot reach the server. Retrying..."; }
 }
 
-const isActive = o => ["open", "picked", "in_progress", "ready"].includes(o.status);
+const isActive = o => ["open", "picked", "in_progress"].includes(o.status);   // still to be made
 const shown = () => orders.filter(o => filter === "all" || (filter === "active" ? isActive(o) : o.status === filter))
   .sort((a, b) => filter === "active" ? new Date(a.created_at) - new Date(b.created_at) : new Date(b.created_at) - new Date(a.created_at));
 
@@ -153,7 +153,7 @@ function card(o) {
   c.appendChild(ul);
   if (o.note) c.append(el("div", "muted", "Note: " + o.note));
   const steps = el("div", "steps");
-  for (const [key, label] of [...STATUS, ["cancelled", "Cancel"]]) {
+  for (const [key, label] of [...STATUS.map(([k, l]) => [k, k === "ready" ? "Ready" : l]), ["cancelled", "Cancel"]]) {
     const b = el("button", (key === o.status ? "cur " : "") + (key === "cancelled" ? "cancel" : ""), label);
     b.disabled = busy.has(o.number);
     b.onclick = () => setStatus(o, key);
