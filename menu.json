@@ -96,7 +96,8 @@
               "price": 5,
               "discount": 50,
               "pic": "🍗",
-              "isNew": true
+              "isNew": true,
+              "soldOut": true
             },
             {
               "id": "i5",
@@ -192,7 +193,8 @@
               "price": 3.5,
               "discount": 0,
               "pic": "🍫",
-              "isNew": false
+              "isNew": false,
+              "soldOut": true
             }
           ]
         },
