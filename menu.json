@@ -281,7 +281,7 @@
               "price": 3.5,
               "discount": 0,
               "pic": "🍞",
-              "isNew": false,
+              "isNew": true,
               "soldOut": false
             }
           ]
