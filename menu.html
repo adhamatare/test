@@ -33,6 +33,10 @@
   .linetop > span:first-child { flex: 1; }
   .line input { font-size: 14px; padding: 6px 8px; }
   .panel input, .panel textarea { width: 100%; box-sizing: border-box; padding: 10px; margin: 6px 0; font-size: 16px; border: 1px solid #c9bba8; border-radius: 8px; }
+  .types { display: flex; gap: 6px; margin-bottom: 8px; }
+  .types button { flex: 1; padding: 10px 4px; border: 1px solid #c9bba8; border-radius: 8px; background: #fff; font-size: 15px; cursor: pointer; }
+  .types button.active { background: #6b3f1d; color: #fff; border-color: #6b3f1d; }
+  .panel input.bad { border-color: #c0392b; background: #fdecea; }
   .total { font-size: 18px; font-weight: 700; display: flex; justify-content: space-between; margin: 12px 0; }
   .send { width: 100%; padding: 14px; border: 0; border-radius: 10px; background: #1fa855; color: #fff; font-size: 17px; font-weight: 600; cursor: pointer; }
   .close { background: none; border: 0; font-size: 15px; color: #7a6a58; cursor: pointer; width: 100%; padding: 10px; }
@@ -54,8 +58,8 @@ const WHATSAPP_NUMBER = "972522866414";   // Counter/kitchen WhatsApp, digits on
 const CURRENCY = { en: "$", ar: "$" };
 
 const UI = {
-  en: { title: "Our Menu", table: "Table", add: "Add", cart: "View order", order: "Your order", tableNo: "Table number", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", lang: "العربية" },
-  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", lang: "English" }
+  en: { title: "Our Menu", table: "Table", add: "Add", cart: "View order", order: "Your order", tableNo: "Table number", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", phone: "Phone number", address: "Delivery address", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", lang: "العربية" },
+  ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", phone: "رقم الهاتف", address: "عنوان التوصيل", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", lang: "English" }
 };
 
 // Item: [English name, Arabic name, English description, Arabic description, price, picture]
@@ -109,6 +113,8 @@ if (!UI[lang]) lang = "en";
 let tab = decodeURIComponent(location.hash.slice(1));
 if (!MENUS[tab]) tab = Object.keys(MENUS)[0];
 let tableNo = params.get("table") || "";
+// How the customer wants the order served; a table QR defaults to dine-in.
+const order = { type: tableNo ? "dinein" : "takeaway", table: tableNo, phone: "", address: "", note: "" };
 const cart = {};   // id -> { name, price, qty }
 
 const $ = id => document.getElementById(id);
@@ -208,8 +214,6 @@ function render() {
 
 function renderSheet() {
   const panel = $("panel");
-  const keepTable = $("tableInput") ? $("tableInput").value : tableNo;
-  const keepNote = $("noteInput") ? $("noteInput").value : "";
   panel.innerHTML = "";
   const h = document.createElement("h2"); h.textContent = t("order"); h.style.marginTop = "0";
   panel.appendChild(h);
@@ -239,11 +243,33 @@ function renderSheet() {
     const tot = document.createElement("div"); tot.className = "total";
     tot.innerHTML = "<span></span><span></span>";
     tot.children[0].textContent = t("total"); tot.children[1].textContent = money(sum);
-    const ti = document.createElement("input"); ti.id = "tableInput"; ti.placeholder = t("tableNo"); ti.value = keepTable; ti.inputMode = "numeric";
-    const ni = document.createElement("textarea"); ni.id = "noteInput"; ni.placeholder = t("note"); ni.rows = 2; ni.value = keepNote;
+    const types = document.createElement("div"); types.className = "types";
+    for (const key of ["dinein", "takeaway", "delivery"]) {
+      const b = document.createElement("button");
+      b.textContent = t(key);
+      b.className = order.type === key ? "active" : "";
+      b.onclick = () => { order.type = key; renderSheet(); };
+      types.appendChild(b);
+    }
+    const field = (key, ph, extra = {}) => {
+      const el = document.createElement("input");
+      el.placeholder = ph; el.value = order[key];
+      Object.assign(el, extra);
+      el.oninput = () => { order[key] = el.value; el.classList.remove("bad"); };
+      el.dataset.field = key;
+      return el;
+    };
+    const fields = [];
+    if (order.type === "dinein") fields.push(field("table", t("tableNo"), { inputMode: "numeric" }));
+    if (order.type === "delivery") {
+      fields.push(field("phone", t("phone"), { inputMode: "tel" }));
+      fields.push(field("address", t("address")));
+    }
+    const ni = document.createElement("textarea"); ni.placeholder = t("note"); ni.rows = 2; ni.value = order.note;
+    ni.oninput = () => { order.note = ni.value; };
     const send = document.createElement("button"); send.className = "send"; send.textContent = t("send");
     send.onclick = sendOrder;
-    panel.append(ti, ni, tot, send);
+    panel.append(types, ...fields, ni, tot, send);
   }
   const close = document.createElement("button"); close.className = "close"; close.textContent = t("close");
   close.onclick = () => { $("sheet").style.display = "none"; };
@@ -253,10 +279,17 @@ function renderSheet() {
 function sendOrder() {
   // The message is always written in English so the kitchen can read it whatever language the customer used.
   const { sum } = totals();
-  const table = $("tableInput").value.trim();
-  const note = $("noteInput").value.trim();
-  const lines = [`*${UI.en.greeting}* (${tab})`];
-  if (table) lines.push(`${UI.en.table}: ${table}`);
+  const required = { dinein: ["table"], takeaway: [], delivery: ["phone", "address"] }[order.type];
+  const missing = required.find(k => !order[k].trim());
+  if (missing) {
+    const el = document.querySelector(`#panel [data-field="${missing}"]`);
+    el.classList.add("bad"); el.focus();
+    return;
+  }
+  const note = order.note.trim();
+  const lines = [`*${UI.en.greeting}* (${tab})`, `${UI.en.type}: ${UI.en[order.type]}`];
+  if (order.type === "dinein") lines.push(`${UI.en.table}: ${order.table.trim()}`);
+  if (order.type === "delivery") lines.push(`${UI.en.phone}: ${order.phone.trim()}`, `${UI.en.address}: ${order.address.trim()}`);
   for (const l of Object.values(cart)) {
     lines.push(`${l.qty} x ${l.name} - ${CURRENCY.en}${(l.qty * l.price).toFixed(2)}`);
     if (l.note && l.note.trim()) lines.push(`   > ${l.note.trim()}`);
