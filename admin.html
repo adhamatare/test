@@ -22,6 +22,8 @@
   .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
   .sec { background: #f1e8da; border-radius: 12px; padding: 10px; margin: 14px 0; }
   .sec-head { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: end; }
+  .thumb { width: 64px; height: 64px; border-radius: 12px; background: #efe5d6; display: flex; align-items: center; justify-content: center; font-size: 34px; overflow: hidden; flex: none; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; }
   .special { font-weight: 700; color: #c0392b; align-self: end; padding-bottom: 10px; }
   .check { display: flex; align-items: center; gap: 6px; font-size: 15px; color: #2b2118; }
   #bar { position: fixed; inset-inline: 0; bottom: 0; background: #2b2118; color: #fff; padding: 12px 16px; display: flex; gap: 12px; align-items: center; justify-content: space-between; }
@@ -127,6 +129,38 @@ function itemCard(sec, it) {
     special.textContent = it.discount > 0 ? `Special price: ${data.settings.currency}${finalPrice(it).toFixed(2)}` : "No discount";
   };
   refresh();
+  const picField = field("Picture (emoji, or an image path like images/burger.jpg)", it, "pic", { wide: true });
+  const picInput = picField.querySelector("input");
+  const thumb = document.createElement("div");
+  thumb.className = "thumb";
+  const showThumb = () => {
+    thumb.innerHTML = "";
+    const p = it.pic || "";
+    if (/[\/.]/.test(p)) { const img = document.createElement("img"); img.src = previews[p] || p; img.alt = ""; thumb.append(img); }
+    else thumb.textContent = p;
+  };
+  showThumb();
+  const up = document.createElement("input");
+  up.type = "file"; up.accept = "image/*"; up.hidden = true;
+  const upBtn = btn("Upload photo", "ghost", () => up.click());
+  up.onchange = async () => {
+    const file = up.files[0];
+    up.value = "";
+    if (!file) return;
+    upBtn.disabled = true; say("Uploading photo...");
+    try {
+      const { path, url } = await uploadPhoto(file, it);
+      previews[path] = url;
+      it.pic = path; picInput.value = path;
+      dirty = true; showThumb();
+      say("Photo uploaded. Click Save changes to put it on the menu.", "ok");
+    } catch (e) { say(e.message, "err"); }
+    upBtn.disabled = false;
+  };
+  picInput.addEventListener("input", showThumb);
+  const photoRow = document.createElement("div");
+  photoRow.className = "row wide";
+  photoRow.append(thumb, upBtn, up);
   grid.append(
     field("Title (English)", it, "en"),
     field("Title (Arabic)", it, "ar", { dir: "rtl" }),
@@ -134,7 +168,8 @@ function itemCard(sec, it) {
     field("Description (Arabic)", it, "dAr", { dir: "rtl" }),
     field("Price", it, "price", { type: "number", min: 0, step: "0.01" }),
     field("Discount % (0 = none)", it, "discount", { type: "number", min: 0, max: 100, step: "1" }),
-    field("Picture (emoji, or image path like images/burger.jpg)", it, "pic", { wide: true }),
+    picField,
+    photoRow,
     special
   );
   card.addEventListener("edited", refresh);
@@ -204,6 +239,42 @@ function build() {
       dirty = true; say("Unsaved changes"); build();
     }));
   }
+}
+
+// ---- Photos ----
+const previews = {};   // uploaded path -> local blob URL, so the preview shows before the site redeploys
+
+// Shrinks the photo (max 800px, JPEG) so phone pictures stay small and load fast on the menu.
+async function toJpeg(file, max = 800, quality = 0.82) {
+  let bmp;
+  try { bmp = await createImageBitmap(file); } catch { throw new Error("This image format is not supported. Use a JPG or PNG photo."); }
+  const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bmp.width * scale); canvas.height = Math.round(bmp.height * scale);
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+  return new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", quality));
+}
+
+const toBase64 = blob => new Promise((resolve, reject) => {
+  const r = new FileReader();
+  r.onload = () => resolve(String(r.result).split(",")[1]);
+  r.onerror = () => reject(new Error("Could not read the photo."));
+  r.readAsDataURL(blob);
+});
+
+async function uploadPhoto(file, it) {
+  if (!file.type.startsWith("image/")) throw new Error("Please choose an image file.");
+  if (file.size > 25 * 1024 * 1024) throw new Error("That photo is too large (25 MB max).");
+  const blob = await toJpeg(file);
+  const path = `images/${it.id}-${Date.now().toString(36)}.jpg`;
+  const res = await gh(`/repos/${REPO}/contents/${path}`, {
+    method: "PUT",
+    body: JSON.stringify({ message: `Add photo for ${it.en || it.id}`, content: await toBase64(blob), branch: BRANCH })
+  });
+  if (!res.ok) throw new Error("Photo upload failed (" + res.status + ").");
+  return { path, url: URL.createObjectURL(blob) };
 }
 
 // ---- Save ----
