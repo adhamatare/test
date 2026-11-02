@@ -66,7 +66,7 @@
               "discount": 0,
               "pic": "🍲",
               "isNew": false,
-              "soldOut": true,
+              "soldOut": false,
               "hidden": false
             },
             {
