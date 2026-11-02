@@ -21,10 +21,11 @@
   .info { flex: 1; }
   .info small { display: block; color: #7a6a58; }
   .price { white-space: nowrap; font-weight: 600; }
-  .soldout .pic { opacity: .45; }
+  .pic { position: relative; }
+  .soldout .pic > :not(.ovl) { opacity: .45; }
   .soldout .info { color: #9a8a78; }
-  .badge.out { background: #5b4a3a; }
-  .sold { padding: 4px 10px; border-radius: 8px; background: #e8dfd3; color: #7a6a58; font-size: 13px; font-weight: 600; }
+  .ovl { position: absolute; inset-inline: 0; bottom: 0; padding: 3px 2px; background: rgba(43, 33, 24, .85); color: #fff; font-size: 11px; font-weight: 700; line-height: 1.2; text-align: center; }
+  .add:disabled { background: #cfc4b6; color: #fff; cursor: not-allowed; }
   .was { display: block; color: #9a8a78; font-weight: 400; font-size: 13px; }
   .badge { display: inline-block; margin-inline-start: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #fff; vertical-align: middle; }
   .badge.new { background: #1fa855; }
@@ -109,7 +110,11 @@ function picture(src) {
     const img = document.createElement("img");
     img.src = src; img.alt = ""; img.loading = "lazy";
     pic.appendChild(img);
-  } else pic.textContent = src;
+  } else {
+    const em = document.createElement("span");
+    em.textContent = src;
+    pic.appendChild(em);
+  }
   return pic;
 }
 
@@ -169,7 +174,6 @@ function render() {
       const info = document.createElement("div");
       info.className = "info";
       info.textContent = name;
-      if (it.soldOut) { const ob = document.createElement("span"); ob.className = "badge out"; ob.textContent = t("soldOut"); info.appendChild(ob); }
       if (it.isNew) { const nb = document.createElement("span"); nb.className = "badge new"; nb.textContent = t("new"); info.appendChild(nb); }
       if (it.discount > 0) { const db = document.createElement("span"); db.className = "badge off"; db.textContent = `-${fmtNum(it.discount)}%`; info.appendChild(db); }
       if (desc) { const s = document.createElement("small"); s.textContent = desc; info.appendChild(s); }
@@ -182,9 +186,9 @@ function render() {
       buy.appendChild(p);
       const qty = cart[id] ? cart[id].qty : 0;
       if (it.soldOut) {
-        const so = document.createElement("div");
-        so.className = "sold"; so.textContent = t("soldOut");
-        buy.appendChild(so);
+        const a = document.createElement("button");
+        a.className = "add"; a.textContent = t("add"); a.disabled = true;
+        buy.appendChild(a);
       } else if (qty) {
         const q = document.createElement("div");
         q.className = "qty";
@@ -199,7 +203,9 @@ function render() {
         a.onclick = () => change(id, en, price, 1, ar);
         buy.appendChild(a);
       }
-      row.append(picture(pic), info, buy);
+      const pc = picture(pic);
+      if (it.soldOut) { const ov = document.createElement("span"); ov.className = "ovl"; ov.textContent = t("soldOut"); pc.appendChild(ov); }
+      row.append(pc, info, buy);
       menu.appendChild(row);
     }
   }
