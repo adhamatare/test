@@ -114,7 +114,8 @@
               "price": 6,
               "discount": 0,
               "pic": "🍰",
-              "isNew": false
+              "isNew": false,
+              "soldOut": true
             },
             {
               "id": "i9",
@@ -159,7 +160,8 @@
               "price": 3.5,
               "discount": 0,
               "pic": "☕",
-              "isNew": false
+              "isNew": false,
+              "soldOut": true
             },
             {
               "id": "i12",
@@ -221,6 +223,17 @@
               "discount": 0,
               "pic": "🍊",
               "isNew": false
+            },
+            {
+              "id": "nmvylx1c8835",
+              "en": "sdfdf",
+              "ar": "",
+              "dEn": "",
+              "dAr": "",
+              "price": 0,
+              "discount": 0,
+              "pic": "🍽️",
+              "isNew": true
             }
           ]
         },
