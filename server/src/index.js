@@ -3,11 +3,18 @@ import cors from "cors";
 import { pool } from "./db.js";
 import { lockedFor, login, logout, requireAdmin } from "./auth.js";
 import { loadMenu } from "./menu.js";
+import { setup } from "./setup.js";
 import { OrderError, STATUSES, listOrders, priceOrder, saveOrder, setStatus } from "./orders.js";
 
 const app = express();
-app.use(cors());          // menu.html is served from another origin (GitHub Pages)
-app.use(express.json());
+// Behind the host's proxy, req.ip must be the visitor's address (used by the order limit and the login lockout).
+app.set("trust proxy", 1);
+
+// Only our own pages may call the API from a browser. ALLOWED_ORIGINS is a comma-separated list.
+const allowed = (process.env.ALLOWED_ORIGINS || "https://adhamatare.github.io,http://localhost:8765,http://localhost:3000")
+  .split(",").map(s => s.trim()).filter(Boolean);
+app.use(cors({ origin: (origin, done) => done(null, !origin || allowed.includes(origin)) }));
+app.use(express.json({ limit: "50kb" }));
 
 app.get("/api/health", async (_req, res) => {
   try { await pool.query("SELECT 1"); res.json({ ok: true }); }
@@ -82,5 +89,6 @@ app.use((err, _req, res, _next) => {
   res.status(err.status === 400 ? 400 : 500).json({ error: err.status === 400 ? "Bad request" : "Server error" });
 });
 
+await setup();
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => console.log(`Menu API on http://localhost:${port}`));

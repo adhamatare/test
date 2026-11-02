@@ -1,0 +1,22 @@
+# Render Blueprint: deploys the menu API from the server/ folder.
+# The database is a separate free PostgreSQL (Neon); its address goes in DATABASE_URL.
+services:
+  - type: web
+    name: menu-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm ci
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: DATABASE_URL
+        sync: false          # paste the Neon connection string in the Render dashboard
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false          # used once to create the first admin; remove it afterwards
+      - key: ALLOWED_ORIGINS
+        value: https://adhamatare.github.io
