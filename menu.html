@@ -2,84 +2,202 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2f1d13">
 <title>Menu</title>
 <style>
-  body { font-family: system-ui, "Segoe UI", Tahoma, sans-serif; margin: 0; background: #faf7f2; color: #2b2118; padding-bottom: 80px; }
-  header { padding: 16px 16px 0; text-align: center; position: relative; }
-  header h1 { margin: 8px 0 0; }
-  #lang { position: absolute; top: 12px; inset-inline-end: 12px; padding: 8px 14px; border: 1px solid #c9bba8; border-radius: 8px; background: #fff; cursor: pointer; }
-  #table { color: #6f5f4d; font-size: 14px; margin-top: 4px; }
-  #banner { display: none; margin: 12px 16px 0; padding: 10px 14px; border-radius: 10px; background: #fdecea; color: #8e2a20; text-align: center; font-weight: 600; }
+  :root {
+    color-scheme: light dark;
+    --bg: #f7f2ec; --surface: #ffffff; --surface-2: #f0e8de; --line: #e6dccf;
+    --ink: #221a14; --muted: #6d6157; --faint: #9a8d81;
+    --hero: #2f1d13; --hero-ink: #fbf3ea; --hero-muted: #d9c6b4;
+    --brand: #8a4b26; --on-brand: #ffffff; --brand-soft: #f5e6da;
+    --deal-bg: #fde4d6; --deal-ink: #9a3412;
+    --new-bg: #e1f2e5; --new-ink: #1d6b34;
+    --ok: #177a43; --on-ok: #ffffff;
+    --bad-bg: #fdecea; --bad-ink: #a8231a;
+    --shadow: 0 10px 30px rgba(47, 29, 19, .18);
+    --display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --body: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Arabic", Tahoma, sans-serif;
+    --r: 18px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14100d; --surface: #1e1814; --surface-2: #2a221c; --line: #382e26;
+      --ink: #f4ece3; --muted: #b9ab9d; --faint: #8c7f73;
+      --hero: #241812; --hero-ink: #f8ede1; --hero-muted: #c9b29d;
+      --brand: #e2a272; --on-brand: #1c120c; --brand-soft: #3a2a1f;
+      --deal-bg: #4a2416; --deal-ink: #ffb894;
+      --new-bg: #173823; --new-ink: #93dcaa;
+      --bad-bg: #3d1714; --bad-ink: #ff9d92;
+      --shadow: 0 10px 30px rgba(0, 0, 0, .5);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); padding-bottom: 104px; }
+  body.locked { overflow: hidden; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  /* header */
+  .hero { background: var(--hero); color: var(--hero-ink); padding: 24px 16px 24px; }
+  .hero-in { max-width: 960px; margin: 0 auto; }
+  .hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .lang { flex: none; }
+  .lang { min-height: 40px; padding: 0 16px; border: 1px solid color-mix(in srgb, var(--hero-ink) 35%, transparent); border-radius: 999px; background: transparent; color: var(--hero-ink); cursor: pointer; }
+  .lang:hover { background: color-mix(in srgb, var(--hero-ink) 12%, transparent); }
+  .hero h1 { font-family: var(--display); font-weight: 600; font-size: clamp(32px, 7vw, 44px); line-height: 1.05; letter-spacing: -.01em; margin: 0 0 14px; }
+  :lang(ar) .hero h1, :lang(ar) h2 { font-family: var(--body); letter-spacing: 0; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 12px; border-radius: 999px; font-size: 14px; background: color-mix(in srgb, var(--hero-ink) 12%, transparent); color: var(--hero-ink); }
+  .pill:empty { display: none; }
+  .pill.ok::before, .pill.bad::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #4ade80; }
+  .pill.bad::before { background: #f87171; }
+
+  /* notices */
+  .notices { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+  #banner { display: none; margin-top: 16px; padding: 14px 16px; border-radius: 14px; background: var(--bad-bg); color: var(--bad-ink); font-weight: 600; }
   #banner small { display: block; font-weight: 400; margin-top: 2px; }
-  #track { display: none; margin: 12px 16px 0; padding: 12px 14px; border-radius: 10px; background: #fff; border: 1px solid #c9bba8; }
-  #track .tt { display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
-  #track .x { border: 0; background: none; font-size: 20px; line-height: 1; cursor: pointer; color: #6f5f4d; padding: 0 4px; }
-  #track ol { list-style: none; display: flex; gap: 4px; margin: 10px 0 0; padding: 0; }
-  #track li { flex: 1; text-align: center; font-size: 12px; padding: 6px 2px; border-radius: 8px; background: #efe5d6; color: #8a7a68; }
-  #track li.done { background: #d8ecdf; color: #1b7a43; }
-  #track li.now { background: #1b8f49; color: #fff; font-weight: 700; }
-  #track.cancelled { border-color: #c0392b; background: #fdecea; color: #8e2a20; }
-  nav { display: flex; gap: 8px; justify-content: center; padding: 16px; flex-wrap: wrap; }
-  nav button { padding: 10px 20px; border: 0; border-radius: 999px; background: #e8dfd3; font-size: 16px; cursor: pointer; }
-  nav button.active { background: #6b3f1d; color: #fff; }
-  main { max-width: 560px; margin: 0 auto; padding: 0 16px; }
-  h2 { border-bottom: 2px solid #6b3f1d; padding-bottom: 4px; margin-top: 28px; }
-  .item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px dotted #c9bba8; }
-  .pic { position: relative; flex: none; width: 64px; height: 64px; border-radius: 12px; background: #efe5d6; display: flex; align-items: center; justify-content: center; font-size: 34px; overflow: hidden; }
+  #track { display: none; margin-top: 16px; padding: 14px 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+  #track .tt { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+  #track .x, .sheet-head .x { width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--surface-2); color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer; }
+  #track ol { list-style: none; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; margin: 14px 0 0; padding: 0; }
+  #track li { position: relative; padding-top: 16px; font-size: 12px; text-align: center; color: var(--faint); }
+  #track li::before { content: ""; position: absolute; top: 0; inset-inline: 0; height: 6px; border-radius: 3px; background: var(--surface-2); }
+  #track li.done { color: var(--ok); }
+  #track li.done::before { background: var(--ok); opacity: .45; }
+  #track li.now { color: var(--ok); font-weight: 700; }
+  #track li.now::before { background: var(--ok); }
+  #track.cancelled { background: var(--bad-bg); border-color: transparent; color: var(--bad-ink); }
+
+  /* sticky menu tabs and section shortcuts */
+  .sticky { position: sticky; top: 0; z-index: 5; background: var(--bg); background: color-mix(in srgb, var(--bg) 90%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .tabs, .chips { display: flex; gap: 8px; max-width: 960px; margin: 0 auto; padding: 12px 16px 0; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar, .chips::-webkit-scrollbar { display: none; }
+  .chips { padding: 10px 16px 12px; }
+  .tabs:last-child { padding-bottom: 12px; }
+  .tabs button { flex: none; min-height: 42px; padding: 0 18px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-weight: 600; cursor: pointer; }
+  .tabs button.active { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+  .chips button { flex: none; min-height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 14px; cursor: pointer; }
+  .chips button:hover { color: var(--ink); }
+
+  /* menu */
+  main { max-width: 960px; margin: 0 auto; padding: 8px 16px 0; }
+  .sec h2 { font-family: var(--display); font-weight: 600; font-size: 24px; margin: 28px 0 12px; scroll-margin-top: 130px; }
+  .grid { display: grid; gap: 12px; }
+  @media (min-width: 760px) { .grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 340px) { .card { grid-template-columns: 72px 1fr !important; } .pic { width: 72px !important; height: 72px !important; font-size: 34px !important; } .foot { flex-wrap: wrap; } }
+  .card { display: grid; grid-template-columns: 96px 1fr; gap: 14px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+  .card.combo { background: var(--brand-soft); border-color: transparent; }
+  .pic { position: relative; width: 96px; height: 96px; border-radius: 14px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 44px; overflow: hidden; }
+  .card.combo .pic { background: var(--surface); }
   .pic img { width: 100%; height: 100%; object-fit: cover; }
-  .info { flex: 1; }
-  .info small { display: block; color: #6f5f4d; }
-  .price { white-space: nowrap; font-weight: 600; }
-  .soldout .pic > :not(.ovl) { opacity: .45; }
-  .soldout .info { color: #8a7a68; }
-  .ovl { position: absolute; inset-inline: 0; bottom: 0; padding: 3px 2px; background: rgba(43, 33, 24, .85); color: #fff; font-size: 11px; font-weight: 700; line-height: 1.2; text-align: center; }
-  .add:disabled { background: #cfc4b6; color: #fff; cursor: not-allowed; }
-  .was { display: block; color: #85705a; font-weight: 400; font-size: 13px; }
-  .badge { display: inline-block; margin-inline-start: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #fff; vertical-align: middle; }
-  .badge.new { background: #1b8f49; }
-  .badge.off { background: #c0392b; }
-  .buy { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .qty { display: flex; align-items: center; gap: 8px; }
-  .qty button, .add { border: 0; border-radius: 8px; background: #6b3f1d; color: #fff; font-size: 18px; min-width: 44px; height: 44px; cursor: pointer; }
-  .add { padding: 0 14px; font-size: 16px; }
-  #bar { position: fixed; inset-inline: 0; bottom: 0; padding: 14px 16px; background: #6b3f1d; color: #fff; display: none; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 600; }
-  #sheet { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: flex-end; justify-content: center; }
-  #sheet .panel { background: #faf7f2; width: 100%; max-width: 560px; max-height: 90vh; overflow: auto; border-radius: 16px 16px 0 0; padding: 16px; box-sizing: border-box; }
-  .line { padding: 8px 0; border-bottom: 1px dotted #c9bba8; }
-  .linetop { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .linetop > span:first-child { flex: 1; }
-  .line input { font-size: 14px; padding: 6px 8px; }
-  .panel input, .panel textarea, .panel select { width: 100%; box-sizing: border-box; padding: 10px; margin: 6px 0; font-size: 16px; border: 1px solid #c9bba8; border-radius: 8px; background: #fff; }
-  .types { display: flex; gap: 6px; margin-bottom: 8px; }
-  .types button { flex: 1; padding: 12px 4px; border: 1px solid #c9bba8; border-radius: 8px; background: #fff; font-size: 15px; cursor: pointer; }
-  .types button.active { background: #6b3f1d; color: #fff; border-color: #6b3f1d; }
-  .panel .bad { border-color: #c0392b; background: #fdecea; }
-  .warn { color: #8e2a20; font-size: 14px; margin: 4px 0; }
-  .total { font-size: 18px; font-weight: 700; display: flex; justify-content: space-between; margin: 12px 0; }
-  .send, .secondary { width: 100%; padding: 14px; border: 0; border-radius: 10px; font-size: 17px; font-weight: 600; cursor: pointer; margin-top: 8px; }
-  .send { background: #1b8f49; color: #fff; }
-  .send:disabled { background: #cfc4b6; cursor: not-allowed; }
-  .secondary { background: #e8dfd3; color: #2b2118; }
-  .close { background: none; border: 0; font-size: 15px; color: #6f5f4d; cursor: pointer; width: 100%; padding: 12px; }
-  .parts { display: block; color: #6f5f4d; font-size: 13px; margin-top: 2px; }
-  .saving { color: #1b7a43; font-weight: 600; }
-  .ordno { font-size: 28px; font-weight: 800; letter-spacing: 2px; text-align: center; margin: 8px 0; }
+  .soldout .pic > :not(.ovl) { filter: grayscale(1); opacity: .45; }
+  .soldout .name, .soldout .desc, .soldout .now { color: var(--faint); }
+  .ovl { position: absolute; inset-inline: 0; bottom: 0; padding: 4px 2px; background: rgba(20, 14, 10, .82); color: #fff; font-size: 12px; font-weight: 700; text-align: center; }
+  .body { display: flex; flex-direction: column; min-width: 0; }
+  .name { margin: 2px 0 0; font-size: 17px; font-weight: 650; line-height: 1.3; }
+  .badge { display: inline-block; margin-inline-start: 6px; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; vertical-align: 2px; white-space: nowrap; }
+  .badge.new { background: var(--new-bg); color: var(--new-ink); }
+  .badge.off { background: var(--deal-bg); color: var(--deal-ink); }
+  .desc, .sub { margin: 4px 0 0; font-size: 14px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .sub { color: var(--ink); }
+  .foot { margin-top: auto; padding-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .price { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .now { font-size: 17px; font-weight: 700; }
+  .was { font-size: 14px; color: var(--faint); }
+  .add { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 16px; border: 1.5px solid var(--brand); border-radius: 999px; background: transparent; color: var(--brand); font-weight: 650; cursor: pointer; white-space: nowrap; }
+  .add:hover:not(:disabled) { background: var(--brand); color: var(--on-brand); }
+  .add:disabled { border-color: var(--line); color: var(--faint); cursor: not-allowed; }
+  .add span { font-size: 20px; line-height: 1; }
+  .qty { display: inline-flex; align-items: center; border-radius: 999px; background: var(--brand); color: var(--on-brand); }
+  .qty button { width: 40px; height: 40px; border: 0; border-radius: 50%; background: transparent; color: inherit; font-size: 20px; cursor: pointer; }
+  .qty .n { min-width: 22px; text-align: center; font-weight: 700; }
+  .loading { display: grid; gap: 12px; margin-top: 24px; }
+  .loading div { height: 120px; border-radius: var(--r); background: var(--surface-2); }
+  .failed { margin: 40px 0; text-align: center; color: var(--muted); }
+
+  /* floating cart */
+  .cartbar { position: fixed; z-index: 6; inset-inline: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); max-width: 560px; margin: 0 auto; min-height: 60px; padding: 8px 18px 8px 8px; border: 0; border-radius: 20px; background: var(--brand); color: var(--on-brand); box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; cursor: pointer; font-weight: 650; text-align: start; }
+  [dir="rtl"] .cartbar { padding: 8px 8px 8px 18px; }
+  .cartbar .count { min-width: 44px; height: 44px; padding: 0 8px; border-radius: 14px; background: color-mix(in srgb, var(--on-brand) 18%, transparent); display: grid; place-items: center; font-weight: 800; }
+  .cartbar #barCount { flex: 1; }
+  .cartbar #barTotal { font-size: 18px; }
+
+  /* order sheet */
+  #sheet { position: fixed; inset: 0; z-index: 10; background: rgba(15, 10, 6, .55); display: none; align-items: flex-end; justify-content: center; }
+  #sheet .panel { position: relative; background: var(--bg); width: 100%; max-width: 560px; max-height: 92vh; overflow: auto; border-radius: 24px 24px 0 0; padding: 22px 20px calc(20px + env(safe-area-inset-bottom)); outline: none; }
+  #sheet .panel::before { content: ""; position: absolute; top: 8px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--line); }
+  @media (min-width: 760px) { #sheet { align-items: center; } #sheet .panel { border-radius: 24px; max-height: 86vh; } #sheet .panel::before { display: none; } }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .panel h2 { font-family: var(--display); font-weight: 600; font-size: 26px; margin: 0; }
+  .line { padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .linetop { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 10px; }
+  .linetop > span:first-child { flex: 1 1 120px; min-width: 0; font-weight: 600; }   /* on very narrow screens the stepper and price drop below the name */
+  .linetop > span:last-child { white-space: nowrap; }
+  .line .qty { background: var(--surface-2); color: var(--ink); }
+  .line .qty button { width: 36px; height: 36px; font-size: 18px; }
+  .panel .line input { margin: 6px 0 0; padding: 8px 0; font-size: 14px; border: 0; border-bottom: 1px dashed var(--line); border-radius: 0; background: transparent; }
+  .panel .line input:focus { outline: none; border-bottom: 1px solid var(--brand); }
+  .parts { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .label { margin: 18px 0 8px; font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  :lang(ar) .label { text-transform: none; letter-spacing: 0; }
+  .panel input, .panel textarea, .panel select { width: 100%; padding: 12px 14px; margin: 0 0 10px; font: inherit; font-size: 16px; color: var(--ink); border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  .panel textarea { resize: vertical; }
+  .panel input:focus, .panel textarea:focus, .panel select:focus { outline: 2px solid var(--brand); outline-offset: 0; border-color: transparent; }
+  .types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; margin-bottom: 12px; border-radius: 14px; background: var(--surface-2); }
+  .types button { min-height: 42px; padding: 0 4px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font-weight: 600; cursor: pointer; }
+  .types button.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+  .panel .bad { border-color: var(--bad-ink); background: var(--bad-bg); }
+  .summary { margin: 8px 0 4px; padding: 6px 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+  .summary .linetop { padding: 8px 0; }
+  .summary .linetop > span:first-child { font-weight: 400; color: var(--muted); }
+  .saving > span { color: var(--ok) !important; font-weight: 650 !important; }
+  .total { display: flex; justify-content: space-between; padding: 10px 0 8px; margin-top: 2px; border-top: 1px solid var(--line); font-size: 19px; font-weight: 750; }
+  .summary .total:first-child { border-top: 0; }
+  .warn { margin: 10px 0 0; padding: 10px 14px; border-radius: 12px; background: var(--bad-bg); color: var(--bad-ink); font-size: 14px; }
+  .send, .secondary { width: 100%; min-height: 54px; padding: 0 16px; border: 0; border-radius: 16px; font-size: 17px; font-weight: 700; cursor: pointer; margin-top: 14px; }
+  .send { background: var(--ok); color: var(--on-ok); }
+  .send:disabled { background: var(--surface-2); color: var(--faint); cursor: not-allowed; }
+  .secondary { background: var(--surface-2); color: var(--ink); margin-top: 10px; }
+  .close { width: 100%; min-height: 48px; margin-top: 6px; border: 0; background: none; color: var(--muted); cursor: pointer; }
+  .ordno { margin: 14px auto; padding: 16px; max-width: 320px; border: 2px dashed var(--line); border-radius: 18px; background: var(--surface); font-size: 30px; font-weight: 800; letter-spacing: 2px; text-align: center; }
   .center { text-align: center; }
+  p.center { color: var(--muted); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    #sheet { animation: fade .18s ease-out; }
+    #sheet .panel { animation: rise .24s cubic-bezier(.2, .8, .2, 1); }
+    .cartbar.bump { animation: bump .3s ease-out; }
+    .loading div { animation: pulse 1.2s ease-in-out infinite alternate; }
+    .card, .add, .tabs button { transition: background-color .15s, border-color .15s, color .15s; }
+  }
+  @keyframes fade { from { opacity: 0; } }
+  @keyframes rise { from { transform: translateY(32px); opacity: .6; } }
+  @keyframes bump { 40% { transform: scale(1.03); } }
+  @keyframes pulse { to { opacity: .5; } }
 </style>
 </head>
 <body>
-<header>
-  <button id="lang"></button>
-  <h1 id="title"></h1>
-  <div id="table"></div>
+<header class="hero">
+  <div class="hero-in">
+    <div class="hero-top"><h1 id="title"></h1><button id="lang" class="lang" type="button"></button></div>
+    <div class="meta"><span id="status" class="pill"></span><span id="table" class="pill"></span></div>
+  </div>
 </header>
-<div id="banner"></div>
-<div id="track"></div>
-<nav id="tabs"></nav>
-<main id="menu"></main>
-<div id="bar"><span id="barCount"></span><span id="barTotal"></span></div>
-<div id="sheet"><div class="panel" id="panel"></div></div>
+<div class="notices">
+  <div id="banner" role="status"></div>
+  <div id="track" aria-live="polite"></div>
+</div>
+<div class="sticky">
+  <nav id="tabs" class="tabs"></nav>
+  <nav id="chips" class="chips" hidden></nav>
+</div>
+<main id="menu"><div class="loading" aria-hidden="true"><div></div><div></div><div></div></div></main>
+<button id="bar" class="cartbar" type="button" hidden><span class="count" id="barQty"></span><span id="barCount"></span><span id="barTotal"></span></button>
+<div id="sheet"><div class="panel" id="panel" role="dialog" aria-modal="true" tabindex="-1"></div></div>
 <script>
 // ---- Settings ----
 // Overwritten from menu.json "settings" (editable in admin.html).
@@ -93,10 +211,12 @@ const UI = {
   en: { title: "Our Menu", table: "Table", add: "Add", offers: "Special offers", combos: "Combo offers", save: "Save", youSave: "You save", unavailable: "Unavailable", includes: "Includes", new: "NEW", soldOut: "Sold out", cart: "View order", order: "Your order", tableNo: "Table number", name: "Your name", customer: "Customer", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", free: "Free", phone: "Phone number", address: "Delivery address", area: "Delivery area", pickArea: "Select your area", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", orderNo: "Order", lang: "العربية",
         closed: "We're closed right now", paused: "Online ordering is paused right now", todayHours: "Today's hours", closedToday: "Closed today", minOrder: "Minimum order for delivery is", badPhone: "Please enter a valid phone number", needArea: "Please select your delivery area",
         confirmTitle: "Almost done!", confirmText: "WhatsApp opened with your order. Press Send in WhatsApp to place it. Your order is NOT placed until you send the message.", openAgain: "Open WhatsApp again", sent: "I sent it", back: "Back to my order", thanks: "Thank you! We received your order message.", keep: "Keep this order number", done: "Done", trackTitle: "Order status", hide: "Hide",
+        openNow: "Open now", closedNow: "Closed", pausedShort: "Ordering paused", remove: "Remove one", subtotal: "Subtotal", loadError: "Could not load the menu. Please refresh.", menus: "Menus", sections: "Sections",
         st: { open: "Open", picked: "Picked", in_progress: "In progress", ready: { takeaway: "Ready for pickup", dinein: "Ready to serve", delivery: "Ready for delivery" }, cancelled: "Cancelled" } },
   ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", offers: "العروض", combos: "عروض الكومبو", save: "وفّر", youSave: "وفّرت", unavailable: "غير متوفر", includes: "يشمل", new: "جديد", soldOut: "نفدت الكمية", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", name: "اسمك", customer: "العميل", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", free: "مجاني", phone: "رقم الهاتف", address: "عنوان التوصيل", area: "منطقة التوصيل", pickArea: "اختر منطقتك", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", orderNo: "الطلب", lang: "English",
         closed: "نحن مغلقون الآن", paused: "الطلب عبر الإنترنت متوقف مؤقتًا", todayHours: "ساعات اليوم", closedToday: "مغلق اليوم", minOrder: "الحد الأدنى لطلب التوصيل", badPhone: "يرجى إدخال رقم هاتف صحيح", needArea: "يرجى اختيار منطقة التوصيل",
         confirmTitle: "أوشكنا على الانتهاء!", confirmText: "فتح واتساب مع طلبك. اضغط إرسال في واتساب لتأكيد الطلب. لن يتم تسجيل طلبك حتى ترسل الرسالة.", openAgain: "افتح واتساب مرة أخرى", sent: "أرسلتها", back: "العودة إلى طلبي", thanks: "شكرًا لك! وصلتنا رسالة طلبك.", keep: "احتفظ برقم الطلب", done: "تم", trackTitle: "حالة الطلب", hide: "إخفاء",
+        openNow: "مفتوح الآن", closedNow: "مغلق", pausedShort: "الطلب متوقف", remove: "أزل واحدًا", subtotal: "المجموع الفرعي", loadError: "تعذّر تحميل القائمة. يرجى تحديث الصفحة.", menus: "القوائم", sections: "الأقسام",
         st: { open: "مفتوح", picked: "تم الاستلام", in_progress: "قيد التحضير", ready: { takeaway: "جاهز للاستلام", dinein: "جاهز للتقديم", delivery: "جاهز للتوصيل" }, cancelled: "ملغي" } }
 };
 
@@ -128,6 +248,8 @@ let pending = null;   // { id, url } once the WhatsApp chat has been opened
 let wasOpen = true;
 
 const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const t = k => UI[lang][k];
 const money = n => CURRENCY[lang] + n.toFixed(2);
 const fmtNum = n => lang === "ar" ? String(n).replace(/\d/g, d => "٠١٢٣٤٥٦٧٨٩"[d]) : String(n);
@@ -160,8 +282,11 @@ function openStatus() {
 }
 
 function renderBanner() {
-  const s = openStatus(), b = $("banner");
+  const s = openStatus(), b = $("banner"), pill = $("status");
   wasOpen = s.open;
+  // Small "Open now / Closed" pill in the header; nothing when opening hours are not used.
+  pill.className = "pill " + (s.open ? "ok" : "bad");
+  pill.textContent = s.paused ? t("pausedShort") : !SETTINGS.useHours ? "" : s.open ? t("openNow") : t("closedNow");
   if (s.open) { b.style.display = "none"; return; }
   b.style.display = "block";
   b.textContent = s.paused ? t("paused") : t("closed");
@@ -332,130 +457,140 @@ function render() {
   const open = wasOpen;
 
   $("tabs").innerHTML = "";
+  $("tabs").setAttribute("aria-label", t("menus"));
+  $("chips").setAttribute("aria-label", t("sections"));
   const tabs = Object.entries(MENUS).map(([key, m]) => [key, lang === "ar" ? m.ar : key]);
   if (hasOffers()) tabs.push([OFFERS, t("offers")]);
   for (const [key, label] of tabs) {
     const b = document.createElement("button");
     b.textContent = label;
+    b.type = "button";
     b.className = key === tab ? "active" : "";
+    b.setAttribute("aria-pressed", String(key === tab));
     b.onclick = () => { tab = key; history.replaceState(null, "", "#" + encodeURIComponent(key)); render(); };
     $("tabs").appendChild(b);
   }
 
   const menu = $("menu");
   menu.innerHTML = "";
-  if (tab === OFFERS) renderBundles(menu, open);
+  const groups = [];   // every section shown, for the shortcut chips under the tabs
+  if (tab === OFFERS) renderBundles(menu, open, groups);
   for (const sec of sectionsFor(tab)) {
     const shown = sec.items.filter(it => !it.hidden);   // hidden items never reach customers
     if (!shown.length) continue;
-    const h = document.createElement("h2");
-    h.textContent = sec[lang];
-    menu.appendChild(h);
+    const grid = section(menu, sec[lang] || sec.en, groups);
     for (const it of shown) {
-      const { id, en, ar, pic } = it;
       const price = finalPrice(it);
-      const name = lang === "ar" ? ar : en;
-      const desc = lang === "ar" ? it.dAr : it.dEn;
-      const row = document.createElement("div");
-      row.className = "item" + (it.soldOut ? " soldout" : "");
-      const info = document.createElement("div");
-      info.className = "info";
-      info.textContent = name;
-      if (it.isNew) { const nb = document.createElement("span"); nb.className = "badge new"; nb.textContent = t("new"); info.appendChild(nb); }
-      if (it.discount > 0) { const db = document.createElement("span"); db.className = "badge off"; db.textContent = `-${fmtNum(it.discount)}%`; info.appendChild(db); }
-      if (desc) { const s = document.createElement("small"); s.textContent = desc; info.appendChild(s); }
-      const buy = document.createElement("div");
-      buy.className = "buy";
-      const p = document.createElement("div");
-      p.className = "price";
-      if (it.discount > 0) { const old = document.createElement("s"); old.className = "was"; old.textContent = money(it.price); p.appendChild(old); }
-      p.appendChild(document.createTextNode(money(price)));
-      buy.appendChild(p);
-      const qty = cart[id] ? cart[id].qty : 0;
-      if (it.soldOut || (!open && !qty)) {
-        const a = document.createElement("button");
-        a.className = "add"; a.textContent = t("add"); a.disabled = true;
-        buy.appendChild(a);
-      } else if (qty) {
-        const q = document.createElement("div");
-        q.className = "qty";
-        const minus = document.createElement("button"); minus.textContent = "−"; minus.setAttribute("aria-label", "-"); minus.onclick = () => change(id, en, price, -1, ar);
-        const n = document.createElement("span"); n.textContent = fmtNum(qty);
-        const plus = document.createElement("button"); plus.textContent = "+"; plus.setAttribute("aria-label", "+"); plus.onclick = () => change(id, en, price, 1, ar);
-        q.append(minus, n, plus);
-        buy.appendChild(q);
-      } else {
-        const a = document.createElement("button");
-        a.className = "add"; a.textContent = t("add");
-        a.onclick = () => change(id, en, price, 1, ar);
-        buy.appendChild(a);
-      }
-      const pc = picture(pic);
-      if (it.soldOut) { const ov = document.createElement("span"); ov.className = "ovl"; ov.textContent = t("soldOut"); pc.appendChild(ov); }
-      row.append(pc, info, buy);
-      menu.appendChild(row);
+      const name = lang === "ar" && it.ar ? it.ar : it.en;
+      const qty = cart[it.id] ? cart[it.id].qty : 0;
+      const badges = [];
+      if (it.isNew) badges.push(["new", t("new")]);
+      if (it.discount > 0) badges.push(["off", `-${fmtNum(it.discount)}%`]);
+      grid.appendChild(menuCard({
+        name, desc: lang === "ar" ? it.dAr : it.dEn, pic: it.pic, badges,
+        now: money(price), was: it.discount > 0 ? money(it.price) : "",
+        unavailable: it.soldOut, overlay: it.soldOut ? t("soldOut") : "",
+        control: buyControl(name, qty, it.soldOut || (!open && !qty), d => change(it.id, it.en, price, d, it.ar)),
+      }));
     }
   }
 
+  const chips = $("chips");
+  chips.innerHTML = "";
+  chips.hidden = groups.length < 2;
+  for (const g of groups) {
+    const b = el("button", "", g.label);
+    b.type = "button";
+    b.onclick = () => { g.h.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" }); g.h.focus({ preventScroll: true }); };
+    chips.appendChild(b);
+  }
+
   const { count, sum } = totals();
-  $("bar").style.display = count ? "flex" : "none";
-  $("barCount").textContent = `${t("cart")} (${fmtNum(count)})`;
+  const bar = $("bar");
+  bar.hidden = !count;
+  $("barQty").textContent = fmtNum(count);
+  $("barCount").textContent = t("cart");
   $("barTotal").textContent = money(sum);
+  if (count !== lastCount && lastCount !== null) { bar.classList.remove("bump"); void bar.offsetWidth; bar.classList.add("bump"); }   // a small nudge when the order changes
+  lastCount = count;
   if ($("sheet").style.display === "flex") renderSheet();
 }
 
-function renderBundles(menu, open) {
+let lastCount = null;
+
+// A titled block of cards. Returns the grid the cards go into.
+function section(menu, label, groups) {
+  const s = el("section", "sec");
+  const h = el("h2", "", label);
+  h.id = "sec-" + groups.length;
+  h.tabIndex = -1;
+  const grid = el("div", "grid");
+  s.append(h, grid);
+  menu.appendChild(s);
+  groups.push({ h, label });
+  return grid;
+}
+
+// One menu card, used for items and combo offers alike.
+function menuCard({ name, desc, sub, pic, badges = [], now, was, unavailable, overlay, control, combo }) {
+  const card = el("article", "card" + (combo ? " combo" : "") + (unavailable ? " soldout" : ""));
+  const pc = picture(pic);
+  if (overlay) pc.appendChild(el("span", "ovl", overlay));
+  const body = el("div", "body");
+  const h = el("h3", "name", name);
+  for (const [cls, text] of badges) h.appendChild(el("span", "badge " + cls, text));
+  body.appendChild(h);
+  if (sub) body.appendChild(el("p", "sub", sub));
+  if (desc) body.appendChild(el("p", "desc", desc));
+  const foot = el("div", "foot");
+  const price = el("div", "price");
+  price.appendChild(el("span", "now", now));
+  if (was) price.appendChild(el("s", "was", was));
+  foot.append(price, control);
+  body.appendChild(foot);
+  card.append(pc, body);
+  return card;
+}
+
+// "+ Add" while none are in the order, then a  − n +  stepper. step(+1 / -1) changes the order.
+function buyControl(label, qty, disabled, step) {
+  if (qty && !disabled) {
+    const q = el("div", "qty");
+    const minus = el("button", "", "−"); minus.type = "button"; minus.setAttribute("aria-label", `${t("remove")}: ${label}`); minus.onclick = () => step(-1);
+    const n = el("span", "n", fmtNum(qty));
+    const plus = el("button", "", "+"); plus.type = "button"; plus.setAttribute("aria-label", `${t("add")}: ${label}`); plus.onclick = () => step(1);
+    q.append(minus, n, plus);
+    return q;
+  }
+  const a = el("button", "add");
+  a.type = "button";
+  a.append(el("span", "", "+"), t("add"));
+  a.firstChild.setAttribute("aria-hidden", "true");
+  a.setAttribute("aria-label", `${t("add")}: ${label}`);
+  a.disabled = disabled;
+  if (!disabled) a.onclick = () => step(1);
+  return a;
+}
+
+function renderBundles(menu, open, groups) {
   const list = visibleBundles();
   if (!list.length) return;
-  const h = document.createElement("h2");
-  h.textContent = t("combos");
-  menu.appendChild(h);
+  const grid = section(menu, t("combos"), groups);
   for (const b of list) {
     const id = "b:" + b.id;
     const name = lang === "ar" && b.ar ? b.ar : b.en;
-    const desc = lang === "ar" ? b.dAr : b.dEn;
     const avail = bundleAvailable(b), saving = bundleSaving(b), regular = bundleRegular(b);
-    const row = document.createElement("div");
-    row.className = "item" + (avail ? "" : " soldout");
-    const info = document.createElement("div");
-    info.className = "info";
-    info.textContent = name;
-    if (b.isNew) { const nb = document.createElement("span"); nb.className = "badge new"; nb.textContent = t("new"); info.appendChild(nb); }
-    if (saving > 0) { const sb = document.createElement("span"); sb.className = "badge off"; sb.textContent = `${t("save")} ${money(saving)}`; info.appendChild(sb); }
-    const parts = document.createElement("small");
-    parts.textContent = `${t("includes")}: ${bundleParts(b, lang)}`;
-    info.appendChild(parts);
-    if (desc) { const s = document.createElement("small"); s.textContent = desc; info.appendChild(s); }
-    const buy = document.createElement("div");
-    buy.className = "buy";
-    const p = document.createElement("div");
-    p.className = "price";
-    if (saving > 0) { const old = document.createElement("s"); old.className = "was"; old.textContent = money(regular); p.appendChild(old); }
-    p.appendChild(document.createTextNode(money(b.price)));
-    buy.appendChild(p);
     const qty = cart[id] ? cart[id].qty : 0;
-    if (!avail || (!open && !qty)) {
-      const a = document.createElement("button");
-      a.className = "add"; a.textContent = t("add"); a.disabled = true;
-      buy.appendChild(a);
-    } else if (qty) {
-      const q = document.createElement("div");
-      q.className = "qty";
-      const minus = document.createElement("button"); minus.textContent = "−"; minus.setAttribute("aria-label", "-"); minus.onclick = () => change(id, b.en, b.price, -1, b.ar || b.en);
-      const n = document.createElement("span"); n.textContent = fmtNum(qty);
-      const plus = document.createElement("button"); plus.textContent = "+"; plus.setAttribute("aria-label", "+"); plus.onclick = () => change(id, b.en, b.price, 1, b.ar || b.en);
-      q.append(minus, n, plus);
-      buy.appendChild(q);
-    } else {
-      const a = document.createElement("button");
-      a.className = "add"; a.textContent = t("add");
-      a.onclick = () => change(id, b.en, b.price, 1, b.ar || b.en);
-      buy.appendChild(a);
-    }
-    const pc = picture(b.pic || "🎁");
-    if (!avail) { const ov = document.createElement("span"); ov.className = "ovl"; ov.textContent = t("unavailable"); pc.appendChild(ov); }
-    row.append(pc, info, buy);
-    menu.appendChild(row);
+    const badges = [];
+    if (b.isNew) badges.push(["new", t("new")]);
+    if (saving > 0) badges.push(["off", `${t("save")} ${money(saving)}`]);
+    grid.appendChild(menuCard({
+      name, combo: true, pic: b.pic || "🎁", badges,
+      sub: `${t("includes")}: ${bundleParts(b, lang)}`, desc: lang === "ar" ? b.dAr : b.dEn,
+      now: money(b.price), was: saving > 0 ? money(regular) : "",
+      unavailable: !avail, overlay: avail ? "" : t("unavailable"),
+      control: buyControl(name, qty, !avail || (!open && !qty), d => change(id, b.en, b.price, d, b.ar || b.en)),
+    }));
   }
 }
 
@@ -465,8 +600,8 @@ function renderSheet() {
   view = "order";
   const panel = $("panel");
   panel.innerHTML = "";
-  const h = document.createElement("h2"); h.textContent = t("order"); h.style.marginTop = "0";
-  panel.appendChild(h);
+  panel.setAttribute("aria-label", t("order"));
+  panel.appendChild(sheetHead(t("order")));
   const { count, sum } = totals();
   if (!count) { const e = document.createElement("p"); e.textContent = t("empty"); panel.appendChild(e); }
   for (const [id, l] of Object.entries(cart)) {
@@ -476,14 +611,16 @@ function renderSheet() {
     top.className = "linetop";
     const nm = document.createElement("span"); nm.textContent = lang === "ar" ? l.ar : l.name;
     const q = document.createElement("div"); q.className = "qty";
-    const minus = document.createElement("button"); minus.textContent = "−"; minus.onclick = () => change(id, l.name, l.price, -1, l.ar);
-    const n = document.createElement("span"); n.textContent = fmtNum(l.qty);
-    const plus = document.createElement("button"); plus.textContent = "+"; plus.onclick = () => change(id, l.name, l.price, 1, l.ar);
+    const label = lang === "ar" ? l.ar : l.name;
+    const minus = document.createElement("button"); minus.type = "button"; minus.textContent = "−"; minus.setAttribute("aria-label", `${t("remove")}: ${label}`); minus.onclick = () => change(id, l.name, l.price, -1, l.ar);
+    const n = document.createElement("span"); n.className = "n"; n.textContent = fmtNum(l.qty);
+    const plus = document.createElement("button"); plus.type = "button"; plus.textContent = "+"; plus.setAttribute("aria-label", `${t("add")}: ${label}`); plus.onclick = () => change(id, l.name, l.price, 1, l.ar);
     q.append(minus, n, plus);
     const pr = document.createElement("span"); pr.textContent = money(l.qty * l.price);
     top.append(nm, q, pr);
     const note = document.createElement("input");
     note.placeholder = t("itemNote");
+    note.setAttribute("aria-label", `${t("itemNote")}: ${label}`);
     note.value = l.note || "";
     note.oninput = () => { l.note = note.value; saveCart(); };
     line.append(top);
@@ -509,14 +646,17 @@ function renderSheet() {
     const types = document.createElement("div"); types.className = "types";
     for (const key of ["dinein", "takeaway", "delivery"]) {
       const b = document.createElement("button");
+      b.type = "button";
       b.textContent = t(key);
       b.className = order.type === key ? "active" : "";
+      b.setAttribute("aria-pressed", String(order.type === key));
       b.onclick = () => { order.type = key; renderSheet(); };
       types.appendChild(b);
     }
     const field = (key, ph, extra = {}) => {
       const el = document.createElement("input");
       el.placeholder = ph; el.value = order[key];
+      el.setAttribute("aria-label", ph);
       Object.assign(el, extra);
       el.oninput = () => { order[key] = el.value; el.classList.remove("bad"); };
       el.dataset.field = key;
@@ -530,6 +670,7 @@ function renderSheet() {
       if (areas.length) {
         const sel = document.createElement("select");
         sel.dataset.field = "area";
+        sel.setAttribute("aria-label", t("area"));
         const ph = document.createElement("option"); ph.value = ""; ph.textContent = t("pickArea"); sel.appendChild(ph);
         areas.forEach((a, i) => {
           const o = document.createElement("option");
@@ -544,6 +685,7 @@ function renderSheet() {
       fields.push(field("address", t("address"), { autocomplete: "street-address" }));
     }
     const ni = document.createElement("textarea"); ni.placeholder = t("note"); ni.rows = 2; ni.value = order.note;
+    ni.setAttribute("aria-label", t("note"));
     ni.oninput = () => { order.note = ni.value; };
 
     // Things that stop the order from being sent right now
@@ -568,14 +710,47 @@ function renderSheet() {
       saveRow.innerHTML = "<span></span><span></span>";
       saveRow.children[0].textContent = t("youSave"); saveRow.children[1].textContent = money(saved);
     }
-    panel.append(types, ...fields, ni, ...(feeRow ? [feeRow] : []), ...(saveRow ? [saveRow] : []), tot);
+    // Totals in one box: subtotal (only when something is added or taken off), delivery fee, combo savings, total
+    const summary = el("div", "summary");
+    if (feeRow || saveRow) {
+      const st = el("div", "linetop");
+      st.append(el("span", "", t("subtotal")), el("span", "", money(sum)));
+      summary.appendChild(st);
+    }
+    if (feeRow) summary.appendChild(feeRow);
+    if (saveRow) summary.appendChild(saveRow);
+    summary.appendChild(tot);
+    panel.append(el("div", "label", t("type")), types, ...fields, ni, summary);
     if (sendError) notes.push(sendError);   // shown, but does not block trying again
     for (const text of notes) { const w = document.createElement("div"); w.className = "warn"; w.textContent = text; panel.appendChild(w); }
     panel.appendChild(send);
   }
-  const close = document.createElement("button"); close.className = "close"; close.textContent = t("close");
-  close.onclick = () => { $("sheet").style.display = "none"; };
+  const close = document.createElement("button"); close.type = "button"; close.className = "close"; close.textContent = t("close");
+  close.onclick = closeSheet;
   panel.appendChild(close);
+}
+
+function sheetHead(title) {
+  const head = el("div", "sheet-head");
+  const x = el("button", "x", "×");
+  x.type = "button";
+  x.setAttribute("aria-label", t("close"));
+  x.onclick = closeSheet;
+  head.append(el("h2", "", title), x);
+  return head;
+}
+
+function openSheet() {
+  $("sheet").style.display = "flex";
+  document.body.classList.add("locked");
+  renderSheet();
+  $("panel").focus({ preventScroll: true });
+}
+
+function closeSheet() {
+  $("sheet").style.display = "none";
+  document.body.classList.remove("locked");
+  if (!$("bar").hidden) $("bar").focus({ preventScroll: true });
 }
 
 // Short order number so the customer and the kitchen can refer to the same order.
@@ -700,13 +875,14 @@ function renderDone() {
   const no = document.createElement("div"); no.className = "ordno"; no.textContent = `${t("orderNo")} #${pending.id}`;
   const p = document.createElement("p"); p.className = "center"; p.textContent = t("keep");
   const ok = document.createElement("button"); ok.className = "send"; ok.textContent = t("done");
-  ok.onclick = () => { pending = null; view = "order"; $("sheet").style.display = "none"; render(); };
+  ok.onclick = () => { pending = null; view = "order"; closeSheet(); render(); };
   panel.append(h, no, p, ok);
 }
 
 $("lang").onclick = () => { lang = lang === "en" ? "ar" : "en"; store.set("lang", lang); render(); };
-$("bar").onclick = () => { $("sheet").style.display = "flex"; renderSheet(); };
-$("sheet").onclick = e => { if (e.target === $("sheet")) $("sheet").style.display = "none"; };
+$("bar").onclick = openSheet;
+$("sheet").onclick = e => { if (e.target === $("sheet")) closeSheet(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("sheet").style.display === "flex") closeSheet(); });
 
 async function init() {
   try {
@@ -729,14 +905,15 @@ async function init() {
     BUNDLES = Array.isArray(data.bundles) ? data.bundles : [];
     indexItems();
   } catch (e) {
-    $("menu").textContent = "Could not load the menu. Please refresh.";
+    $("menu").innerHTML = "";
+    $("menu").appendChild(el("p", "failed", UI[lang].loadError));
     return;
   }
   const wanted = decodeURIComponent(location.hash.slice(1));
   tab = MENUS[wanted] || (wanted === OFFERS && hasOffers()) ? wanted : Object.keys(MENUS)[0];
   restoreCart();
   render();
-  if (view === "confirm") { $("sheet").style.display = "flex"; renderSheet(); }   // coming back from WhatsApp
+  if (view === "confirm") openSheet();   // coming back from WhatsApp
   setInterval(() => { if (openStatus().open !== wasOpen) render(); }, 30000);       // opening or closing time passed
   pollTrack(); setInterval(pollTrack, 15000);                                       // order status from the kitchen
 }
