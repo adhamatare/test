@@ -79,6 +79,21 @@
   #bar .msg { flex: 1; font-size: 14px; }
   #bar button { min-height: 44px; background: #1f9d55; color: #fff; }
   #bar button.ghost { background: rgba(255, 255, 255, .12); color: var(--hero-ink); font-weight: 500; }
+  dialog.combo-dialog { width: min(580px, calc(100vw - 24px)); max-height: 88vh; padding: 0; border: 1px solid var(--line); border-radius: 18px; background: var(--bg); color: var(--ink); box-shadow: 0 20px 60px rgba(0, 0, 0, .35); overflow: hidden; }
+  dialog.combo-dialog::backdrop { background: rgba(15, 10, 6, .55); }
+  .cd-form { display: flex; flex-direction: column; max-height: 88vh; }
+  .cd-body { padding: 20px; overflow: auto; }
+  .cd-body h3 { margin: 0 0 6px; font-family: var(--display); font-weight: 600; font-size: 22px; }
+  .cd-combo { margin: 14px 0 0; padding: 6px 14px 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  .cd-combo legend { padding: 0 6px; font-weight: 700; }
+  .cd-opt { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; font-size: 15px; font-weight: 400; color: var(--ink); cursor: pointer; }
+  .cd-opt input { flex: none; width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--brand); }
+  .cd-opt > span { flex: 1; min-width: 0; }
+  .cd-opt small { display: block; margin-top: 2px; font-size: 13px; color: var(--muted); }
+  .cd-opt select { margin-top: 8px; }
+  .cd-hint { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+  .cd-hint.warn { color: var(--bad); font-weight: 600; }
+  .cd-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid var(--line); background: var(--surface); }
   .err { color: var(--bad); }
   #bar .err { color: #ffb4ab; }
   .ok { color: #7be3a1; }
@@ -250,14 +265,124 @@ function field(label, obj, key, { type = "text", wide = false, ...attrs } = {}) 
   return wrap;
 }
 
-function checkbox(label, obj, key) {
+// `guard` (optional) runs before the box is ticked and may cancel it: it returns a promise of false (cancel), true, or "rebuild" (true, and redraw the page).
+function checkbox(label, obj, key, guard) {
   const chk = document.createElement("label");
   chk.className = "check";
   const box = document.createElement("input");
   box.type = "checkbox"; box.checked = !!obj[key];
-  box.onchange = () => { obj[key] = box.checked; dirty = true; say("Unsaved changes"); };
+  box.onchange = async () => {
+    if (guard && box.checked) {
+      box.disabled = true;
+      const go = await guard();
+      box.disabled = false;
+      if (!go) { box.checked = false; return; }
+      obj[key] = true; dirty = true; say("Unsaved changes");
+      if (go === "rebuild") build(); else if (refreshSummary) refreshSummary();
+      return;
+    }
+    obj[key] = box.checked; dirty = true; say("Unsaved changes");
+  };
   chk.append(box, label);
   return chk;
+}
+
+// ---- Combos that include an item ----
+// A combo can't be ordered while one of its items is sold out or hidden. Before that happens, ask what to do with each such combo.
+const allItems = () => data.venues.flatMap(v => v.sections.flatMap(sec => sec.items));
+const combosUsing = id => (data.bundles || []).filter(b => !b.hidden && b.items.some(r => r.id === id));
+const money = n => data.settings.currency + (Math.round(n * 100) / 100).toFixed(2);
+
+// Resolves false when the person cancels, true to go ahead, or "rebuild" to go ahead after combos were changed.
+function askAboutCombos(it, action) {
+  const combos = combosUsing(it.id);
+  if (!combos.length) return Promise.resolve(true);
+  const name = it.en || "This item";
+  const byId = Object.fromEntries(allItems().map(i => [i.id, i]));
+  // Replacement candidates: anything available, with items from the same section first (another main for a main)
+  const mySection = data.venues.flatMap(v => v.sections).find(s => s.items.includes(it));
+  const alts = allItems().filter(x => x.id !== it.id && !x.soldOut && !x.hidden)
+    .sort((a, b) => (mySection.items.includes(b) ? 1 : 0) - (mySection.items.includes(a) ? 1 : 0));
+  const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  // What the combo's items would cost one by one if `from` were swapped for `to`
+  const regularWith = (b, to) => b.items.reduce((sum, r) => { const x = byId[r.id === it.id ? to : r.id]; return sum + (x ? finalPrice(x) * r.qty : 0); }, 0);
+
+  return new Promise(resolve => {
+    const dlg = mk("dialog", "combo-dialog");
+    dlg.setAttribute("aria-labelledby", "cdTitle");
+    const form = mk("form", "cd-form"); form.method = "dialog";
+    const body = mk("div", "cd-body");
+    const title = mk("h3", "", `"${name}" is in ${combos.length === 1 ? "a combo offer" : combos.length + " combo offers"}`);
+    title.id = "cdTitle";
+    body.append(title, mk("p", "note", `A combo can't be ordered while one of its items is ${action}. Choose what should happen to ${combos.length === 1 ? "it" : "each one"}:`));
+
+    const picks = combos.map((b, i) => {
+      const line = b.items.find(r => r.id === it.id);
+      const set = mk("fieldset", "cd-combo");
+      set.append(mk("legend", "", `${b.en || "(untitled combo)"}  (${line.qty} x ${name})`));
+      // If the combo is already blocked by another item, replacing this one alone would not bring it back
+      const blockers = b.items.filter(r => r.id !== it.id && (byId[r.id]?.soldOut || byId[r.id]?.hidden)).map(r => byId[r.id].en || r.id);
+      if (blockers.length) set.append(mk("p", "cd-hint warn", `Already unavailable in this combo: ${blockers.join(", ")}. The combo stays unavailable until those are back or replaced too.`));
+      const radio = (value, label, hint) => {
+        const l = mk("label", "cd-opt");
+        const r = mk("input"); r.type = "radio"; r.name = "combo" + i; r.value = value; if (value === "keep") r.checked = true;
+        const t = mk("span"); t.append(label); if (hint) t.append(mk("small", "", hint));
+        l.append(r, t);
+        set.append(l);
+        return { r, t };
+      };
+      radio("keep", "Keep the combo. It shows as unavailable until the item is back", "Automatic: the combo comes back by itself when you untick it.");
+      const rep = radio("replace", `Replace ${name} in this combo with another item`, alts.length ? "This changes the combo for good. Its price stays the same." : "No other item is available to use.");
+      const sel = mk("select"); sel.setAttribute("aria-label", "Replacement item");
+      for (const a of alts) { const o = mk("option", "", `${a.en || "(untitled)"} (${money(finalPrice(a))})`); o.value = a.id; sel.append(o); }
+      const hint = mk("p", "cd-hint");
+      rep.t.append(sel, hint);
+      const showHint = () => {
+        const save = regularWith(b, sel.value) - b.price;
+        hint.className = "cd-hint" + (save < 0 ? " warn" : "");
+        hint.textContent = save > 0 ? `Customers would save ${money(save)} compared with buying separately.`
+          : save < 0 ? `Warning: the combo would cost ${money(-save)} more than buying these separately.` : "The combo would cost the same as buying separately.";
+      };
+      sel.onchange = showHint; showHint();
+      if (!alts.length) { rep.r.disabled = true; sel.disabled = true; }
+      sel.onfocus = () => { rep.r.checked = true; };
+      radio("hide", "Hide the combo from the menu", "It stays hidden until you untick Hide on the combo.");
+      body.append(set);
+      return { b, set, sel };
+    });
+
+    const actions = mk("div", "cd-actions");
+    const cancel = mk("button", "ghost", `Cancel, don't mark it ${action === "sold out" ? "sold out" : "hidden"}`); cancel.type = "button";
+    const ok = mk("button", "", "Apply"); ok.type = "submit"; ok.value = "apply";
+    actions.append(cancel, ok);
+    form.append(body, actions);
+    dlg.append(form);
+
+    cancel.onclick = () => dlg.close("cancel");
+    form.onsubmit = () => {
+      let changed = false;
+      for (const { b, set, sel } of picks) {
+        const mode = set.querySelector("input[type=radio]:checked").value;
+        if (mode === "hide") { b.hidden = true; changed = true; }
+        if (mode === "replace") {
+          for (const r of b.items) if (r.id === it.id) r.id = sel.value;
+          const merged = new Map();   // the replacement may already be in the combo: add the quantities
+          for (const r of b.items) merged.set(r.id, (merged.get(r.id) || 0) + r.qty);
+          b.items = [...merged].map(([id, qty]) => ({ id, qty }));
+          changed = true;
+        }
+      }
+      dlg.dataset.changed = changed ? "1" : "";
+    };
+    dlg.addEventListener("close", () => {
+      const go = dlg.returnValue === "apply";
+      const changed = !!dlg.dataset.changed;
+      dlg.remove();
+      resolve(go ? (changed ? "rebuild" : true) : false);
+    });
+    document.body.append(dlg);
+    dlg.showModal();
+  });
 }
 
 function btn(text, cls, fn) {
@@ -326,7 +451,7 @@ function itemCard(sec, it, opts = {}) {
   card.addEventListener("edited", refresh);
   const row = document.createElement("div");
   row.className = "row";
-  row.append(checkbox("Mark as NEW", it, "isNew"), checkbox("Sold out (shown greyed, can't be ordered)", it, "soldOut"), checkbox("Hide from menu", it, "hidden"));
+  row.append(checkbox("Mark as NEW", it, "isNew"), checkbox("Sold out (shown greyed, can't be ordered)", it, "soldOut", () => askAboutCombos(it, "sold out")), checkbox("Hide from menu", it, "hidden", () => askAboutCombos(it, "hidden")));
   if (!opts.noDelete) row.append(btn("Delete item", "danger", () => {
     if (!confirm(`Delete "${it.en || "this item"}" from the whole menu? This removes it everywhere, including offers and combos.`)) return;
     sec.items.splice(sec.items.indexOf(it), 1);
