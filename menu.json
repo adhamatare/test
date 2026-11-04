@@ -4,7 +4,7 @@
     "deliveryFee": 3,
     "whatsapp": "972592151626",
     "timezone": "Asia/Jerusalem",
-    "useHours": true,
+    "useHours": false,
     "pauseOrders": false,
     "minDeliveryOrder": 50,
     "freeDeliveryOver": 100,
@@ -66,7 +66,7 @@
               "discount": 0,
               "pic": "🍲",
               "isNew": true,
-              "soldOut": false,
+              "soldOut": true,
               "hidden": false
             },
             {
@@ -304,7 +304,7 @@
       "hidden": false,
       "items": [
         {
-          "id": "i1",
+          "id": "i15",
           "qty": 4
         },
         {
