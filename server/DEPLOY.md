@@ -18,6 +18,11 @@ Never paste passwords or connection strings into chat, issues or commits. Type t
 5. Open `https://<your-service>.onrender.com/api/health`. It should show `{"ok":true}`.
 6. In Render > Environment, **delete `ADMIN_PASSWORD`**. It is only used while there are no users.
 
+## 3. Connect the pages
+1. Add the API address (for example `"https://menu-api.onrender.com"`, no `/` at the end) to `API_SERVERS` near the top of the script in **both** `menu.html` and `orders.html`, then commit.
+   The pages ignore any `?api=` address that is not in that list (except `localhost`), so nobody can point your pages at their own server.
+2. Open `orders.html?api=<that address>` once on each staff device to sign in, and use `menu.html?api=<that address>` in the QR codes.
+
 ## Good to know
 - The free Render service sleeps after about 15 minutes without visits, and the first request after that takes roughly 30 to 60 seconds. A paid plan removes this.
 - Neon's free database also pauses when idle and wakes by itself.

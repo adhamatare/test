@@ -227,9 +227,21 @@ let BUNDLES = [];   // Combo offers: { id, en, ar, dEn, dAr, price, pic, isNew, 
 
 // ---- State ----
 const params = new URLSearchParams(location.search);
+// Backends the pages may talk to. Keep this list the same in menu.html and orders.html.
+// After deploying the API (server/DEPLOY.md), add its address here, e.g. "https://menu-api.onrender.com".
+// ?api= in a link only works for these addresses or this computer (localhost), so a link made by
+// someone else cannot send orders, the WhatsApp number or staff passwords to their own server.
+const API_SERVERS = [];
+function trustedApi(raw) {
+  try {
+    const u = new URL(raw);
+    const local = ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname) && /^https?:$/.test(u.protocol);
+    return local || API_SERVERS.includes(u.origin) ? u.origin : "";
+  } catch { return ""; }
+}
 // Optional backend. Empty = menu.json + WhatsApp only (how the live site works).
 // For testing, open menu.html?api=http://localhost:3000
-const API_URL = (params.get("api") || "").replace(/\/+$/, "");
+const API_URL = trustedApi(params.get("api") || "");
 let sending = false, sendError = "";
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },

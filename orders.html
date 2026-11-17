@@ -79,8 +79,22 @@ const mem = {
   set(k, v, s) { try { (s ? sessionStorage : localStorage).setItem(k, v); } catch {} },
   del(k, s) { try { (s ? sessionStorage : localStorage).removeItem(k); } catch {} }
 };
-if (params.get("api")) mem.set("ordersApi", params.get("api").replace(/\/+$/, ""));
-const API = mem.get("ordersApi") || "http://localhost:3000";
+// Backends the pages may talk to. Keep this list the same in menu.html and orders.html.
+// After deploying the API (server/DEPLOY.md), add its address here, e.g. "https://menu-api.onrender.com".
+// ?api= only works for these addresses or this computer (localhost), so a link made by someone else
+// cannot send staff passwords to their own server.
+const API_SERVERS = [];
+function trustedApi(raw) {
+  try {
+    const u = new URL(raw);
+    const local = ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname) && /^https?:$/.test(u.protocol);
+    return local || API_SERVERS.includes(u.origin) ? u.origin : "";
+  } catch { return ""; }
+}
+const askedApi = trustedApi(params.get("api") || "");
+if (askedApi) mem.set("ordersApi", askedApi);
+// Checked again when read back, so an address saved before this check existed is ignored too.
+const API = trustedApi(mem.get("ordersApi") || "") || "http://localhost:3000";
 
 const STATUS = [["open", "Open"], ["picked", "Picked"], ["in_progress", "In progress"], ["ready", "Ready for pickup"]];
 const NAMES = Object.fromEntries([...STATUS, ["cancelled", "Cancelled"]]);

@@ -12,7 +12,7 @@
     "hours": {
       "mon": {
         "closed": false,
-        "open": "03:00",
+        "open": "09:00",
         "close": "23:00"
       },
       "tue": {
@@ -234,17 +234,6 @@
               "discount": 0,
               "pic": "🍊",
               "isNew": false
-            },
-            {
-              "id": "nmvylx1c8835",
-              "en": "sdfdf",
-              "ar": "",
-              "dEn": "",
-              "dAr": "",
-              "price": 0,
-              "discount": 0,
-              "pic": "🍽️",
-              "isNew": true
             }
           ]
         },
@@ -291,39 +280,5 @@
       ]
     }
   ],
-  "bundles": [
-    {
-      "id": "nmvzi1lr7934",
-      "en": "HasaMix",
-      "ar": "",
-      "dEn": "gjghj",
-      "dAr": "",
-      "price": 85,
-      "pic": "🎁",
-      "isNew": false,
-      "hidden": false,
-      "items": [
-        {
-          "id": "i15",
-          "qty": 4
-        },
-        {
-          "id": "i10",
-          "qty": 4
-        },
-        {
-          "id": "i18",
-          "qty": 4
-        },
-        {
-          "id": "i5",
-          "qty": 4
-        },
-        {
-          "id": "i6",
-          "qty": 7
-        }
-      ]
-    }
-  ]
+  "bundles": []
 }
