@@ -75,25 +75,36 @@ app.post("/api/orders", limitOrders, async (req, res) => {
   }
 });
 
+// Order number from the address, or 0 if it is not a whole number that fits the database column.
+const orderNumber = s => /^\d{1,9}$/.test(s) ? Number(s) : 0;
+
 // A customer checks their own order with the number and the secret they were given when ordering.
 app.get("/api/orders/:number/status", limitStatus, async (req, res, next) => {
   try {
-    const row = await publicStatus(Number(req.params.number), String(req.query.t || ""));
+    const number = orderNumber(req.params.number);
+    const row = number && await publicStatus(number, String(req.query.t || ""));
     row ? res.set("Cache-Control", "no-store").json(row) : res.status(404).json({ error: "No such order" });
   } catch (e) { next(e); }
 });
 
-app.get("/api/orders", requireAdmin, async (req, res) => {
-  const status = req.query.status;
-  if (status && !STATUSES.includes(status)) return res.status(400).json({ error: "Unknown status" });
-  res.json(await listOrders(status));
+// Express 4 does not catch errors thrown in async handlers: each one passes its error to next(),
+// otherwise a single failed query stops the whole server.
+app.get("/api/orders", requireAdmin, async (req, res, next) => {
+  try {
+    const status = req.query.status;
+    if (status && !STATUSES.includes(status)) return res.status(400).json({ error: "Unknown status" });
+    res.json(await listOrders(status));
+  } catch (e) { next(e); }
 });
 
-app.patch("/api/orders/:number/status", requireAdmin, async (req, res) => {
-  const status = req.body?.status;
-  if (!STATUSES.includes(status)) return res.status(400).json({ error: "Unknown status" });
-  const row = await setStatus(Number(req.params.number), status);
-  row ? res.json(row) : res.status(404).json({ error: "No such order" });
+app.patch("/api/orders/:number/status", requireAdmin, async (req, res, next) => {
+  try {
+    const status = req.body?.status;
+    if (!STATUSES.includes(status)) return res.status(400).json({ error: "Unknown status" });
+    const number = orderNumber(req.params.number);
+    const row = number && await setStatus(number, status);
+    row ? res.json(row) : res.status(404).json({ error: "No such order" });
+  } catch (e) { next(e); }
 });
 
 app.use((err, _req, res, _next) => {
