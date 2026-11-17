@@ -1,6 +1,7 @@
 // Loads ../menu.json into PostgreSQL, replacing whatever menu data is there.
 //   npm run import            (manual, replaces existing menu data)
-// setup.js also calls importMenu() once, on an empty database.
+// setup.js also calls importMenu() once, on an empty database; menusync.js calls importMenuData()
+// whenever the published menu.json changes.
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { pool } from "./db.js";
@@ -8,7 +9,11 @@ import { pool } from "./db.js";
 export const DEFAULT_FILE = new URL("../../menu.json", import.meta.url);
 
 export async function importMenu(file = DEFAULT_FILE) {
-  const data = JSON.parse((await readFile(file, "utf8")).replace(/^﻿/, ""));
+  return importMenuData(JSON.parse((await readFile(file, "utf8")).replace(/^﻿/, "")));
+}
+
+// Replaces the menu tables with `data` (the menu.json shape) in one transaction: on any error nothing changes.
+export async function importMenuData(data) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");

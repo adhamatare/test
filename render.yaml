@@ -20,3 +20,5 @@ services:
         sync: false          # used once to create the first admin; remove it afterwards
       - key: ALLOWED_ORIGINS
         value: https://adhamatare.github.io
+      - key: MENU_URL          # the server copies this menu every minute, so admin.html edits reach it
+        value: https://adhamatare.github.io/test/menu.json

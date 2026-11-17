@@ -14,7 +14,8 @@ Never paste passwords or connection strings into chat, issues or commits. Type t
    - `DATABASE_URL`: the Neon connection string
    - `ADMIN_USERNAME`: your admin name (for example `adham`)
    - `ADMIN_PASSWORD`: a strong password you choose (at least 8 characters)
-4. Deploy. The first start creates the tables, loads `menu.json` once and creates your admin.
+4. Deploy. The first start creates the tables, loads the menu and creates your admin.
+   After that the server copies the published `menu.json` every minute (`MENU_URL` in `render.yaml`), so changes made in `admin.html` reach it by themselves.
 5. Open `https://<your-service>.onrender.com/api/health`. It should show `{"ok":true}`.
 6. In Render > Environment, **delete `ADMIN_PASSWORD`**. It is only used while there are no users.
 

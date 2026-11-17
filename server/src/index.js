@@ -3,6 +3,7 @@ import cors from "cors";
 import { pool } from "./db.js";
 import { lockedFor, login, logout, requireAdmin } from "./auth.js";
 import { loadMenu } from "./menu.js";
+import { startMenuSync } from "./menusync.js";
 import { setup } from "./setup.js";
 import { OrderError, STATUSES, listOrders, priceOrder, publicStatus, saveOrder, setStatus } from "./orders.js";
 
@@ -109,9 +110,12 @@ app.patch("/api/orders/:number/status", requireAdmin, async (req, res, next) => 
 
 app.use((err, _req, res, _next) => {
   console.error(err);
-  res.status(err.status === 400 ? 400 : 500).json({ error: err.status === 400 ? "Bad request" : "Server error" });
+  // Mistakes in the request (400 bad JSON, 413 too large) keep their code; everything else is a server error.
+  const status = err.status >= 400 && err.status < 500 ? err.status : 500;
+  res.status(status).json({ error: status === 413 ? "Request too large" : status < 500 ? "Bad request" : "Server error" });
 });
 
 await setup();
+await startMenuSync();
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => console.log(`Menu API on http://localhost:${port}`));

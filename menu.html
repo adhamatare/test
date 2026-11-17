@@ -210,12 +210,12 @@ const DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 const UI = {
   en: { title: "Our Menu", table: "Table", add: "Add", offers: "Special offers", combos: "Combo offers", save: "Save", youSave: "You save", unavailable: "Unavailable", includes: "Includes", new: "NEW", soldOut: "Sold out", cart: "View order", order: "Your order", tableNo: "Table number", name: "Your name", customer: "Customer", type: "Order type", dinein: "Dine in", takeaway: "Takeaway", delivery: "Delivery", fee: "Delivery fee", free: "Free", phone: "Phone number", address: "Delivery address", area: "Delivery area", pickArea: "Select your area", note: "Notes (optional)", itemNote: "Changes for this item (e.g. no onions)", total: "Total", send: "Send order via WhatsApp", close: "Keep browsing", empty: "Your order is empty", greeting: "New order", orderNo: "Order", lang: "العربية",
         closed: "We're closed right now", paused: "Online ordering is paused right now", todayHours: "Today's hours", closedToday: "Closed today", minOrder: "Minimum order for delivery is", badPhone: "Please enter a valid phone number", needArea: "Please select your delivery area",
-        confirmTitle: "Almost done!", confirmText: "WhatsApp opened with your order. Press Send in WhatsApp to place it. Your order is NOT placed until you send the message.", openAgain: "Open WhatsApp again", sent: "I sent it", back: "Back to my order", thanks: "Thank you! We received your order message.", keep: "Keep this order number", done: "Done", trackTitle: "Order status", hide: "Hide",
+        confirmTitle: "Almost done!", confirmText: "WhatsApp opened with your order. Press Send in WhatsApp to place it. Your order is NOT placed until you send the message.", openAgain: "Open WhatsApp again", sent: "I sent it", back: "Back to my order", thanks: "Thank you! We received your order message.", keep: "Keep this order number", done: "Done", trackTitle: "Order status", hide: "Hide", thanksSaved: "Thank you! We received your order.", savedNote: "The restaurant already has your order and you can follow it here. WhatsApp also opened with a copy; sending it is optional.",
         openNow: "Open now", closedNow: "Closed", pausedShort: "Ordering paused", remove: "Remove one", subtotal: "Subtotal", loadError: "Could not load the menu. Please refresh.", menus: "Menus", sections: "Sections",
         st: { open: "Open", picked: "Picked", in_progress: "In progress", ready: { takeaway: "Ready for pickup", dinein: "Ready to serve", delivery: "Ready for delivery" }, cancelled: "Cancelled" } },
   ar: { title: "قائمة الطعام", table: "طاولة", add: "أضف", offers: "العروض", combos: "عروض الكومبو", save: "وفّر", youSave: "وفّرت", unavailable: "غير متوفر", includes: "يشمل", new: "جديد", soldOut: "نفدت الكمية", cart: "عرض الطلب", order: "طلبك", tableNo: "رقم الطاولة", name: "اسمك", customer: "العميل", type: "نوع الطلب", dinein: "في المطعم", takeaway: "سفري", delivery: "توصيل", fee: "رسوم التوصيل", free: "مجاني", phone: "رقم الهاتف", address: "عنوان التوصيل", area: "منطقة التوصيل", pickArea: "اختر منطقتك", note: "ملاحظات (اختياري)", itemNote: "تعديلات على هذا الصنف (مثال: بدون بصل)", total: "الإجمالي", send: "إرسال الطلب عبر واتساب", close: "متابعة التصفح", empty: "طلبك فارغ", greeting: "طلب جديد", orderNo: "الطلب", lang: "English",
         closed: "نحن مغلقون الآن", paused: "الطلب عبر الإنترنت متوقف مؤقتًا", todayHours: "ساعات اليوم", closedToday: "مغلق اليوم", minOrder: "الحد الأدنى لطلب التوصيل", badPhone: "يرجى إدخال رقم هاتف صحيح", needArea: "يرجى اختيار منطقة التوصيل",
-        confirmTitle: "أوشكنا على الانتهاء!", confirmText: "فتح واتساب مع طلبك. اضغط إرسال في واتساب لتأكيد الطلب. لن يتم تسجيل طلبك حتى ترسل الرسالة.", openAgain: "افتح واتساب مرة أخرى", sent: "أرسلتها", back: "العودة إلى طلبي", thanks: "شكرًا لك! وصلتنا رسالة طلبك.", keep: "احتفظ برقم الطلب", done: "تم", trackTitle: "حالة الطلب", hide: "إخفاء",
+        confirmTitle: "أوشكنا على الانتهاء!", confirmText: "فتح واتساب مع طلبك. اضغط إرسال في واتساب لتأكيد الطلب. لن يتم تسجيل طلبك حتى ترسل الرسالة.", openAgain: "افتح واتساب مرة أخرى", sent: "أرسلتها", back: "العودة إلى طلبي", thanks: "شكرًا لك! وصلتنا رسالة طلبك.", keep: "احتفظ برقم الطلب", done: "تم", trackTitle: "حالة الطلب", hide: "إخفاء", thanksSaved: "شكرًا لك! وصلنا طلبك.", savedNote: "وصل طلبك إلى المطعم ويمكنك متابعة حالته هنا. فتحنا واتساب أيضًا بنسخة من الطلب، وإرسالها اختياري.",
         openNow: "مفتوح الآن", closedNow: "مغلق", pausedShort: "الطلب متوقف", remove: "أزل واحدًا", subtotal: "المجموع الفرعي", loadError: "تعذّر تحميل القائمة. يرجى تحديث الصفحة.", menus: "القوائم", sections: "الأقسام",
         st: { open: "مفتوح", picked: "تم الاستلام", in_progress: "قيد التحضير", ready: { takeaway: "جاهز للاستلام", dinein: "جاهز للتقديم", delivery: "جاهز للتوصيل" }, cancelled: "ملغي" } }
 };
@@ -852,10 +852,20 @@ async function sendOrder() {
   lines.push(`${UI.en.total}: ${CURRENCY.en}${(sum + fee).toFixed(2)}`);
   if (order.note.trim()) lines.push(`${UI.en.note.replace(" (optional)", "")}: ${order.note.trim()}`);
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`;
-  pending = { id, url };
-  view = "confirm";
-  saveCart();
-  if (stored) startTrack(stored);
+  if (stored) {
+    // The server already has the order, so it is placed: no "press Send in WhatsApp" step and no way back
+    // to the cart (sending again would make a second order). WhatsApp still opens with a copy.
+    pending = { id, url, saved: true };
+    view = "done";
+    for (const k of Object.keys(cart)) delete cart[k];
+    store.del("cart_v1"); store.del("pending_v1");
+    startTrack(stored);
+    render();
+  } else {
+    pending = { id, url };
+    view = "confirm";
+    saveCart();
+  }
   if (win) win.location.href = url; else window.open(url, "_blank");
   renderSheet();
 }
@@ -883,12 +893,19 @@ function renderConfirm() {
 function renderDone() {
   const panel = $("panel");
   panel.innerHTML = "";
-  const h = document.createElement("h2"); h.textContent = t("thanks"); h.style.marginTop = "0"; h.className = "center";
+  const h = document.createElement("h2"); h.textContent = t(pending.saved ? "thanksSaved" : "thanks"); h.style.marginTop = "0"; h.className = "center";
   const no = document.createElement("div"); no.className = "ordno"; no.textContent = `${t("orderNo")} #${pending.id}`;
   const p = document.createElement("p"); p.className = "center"; p.textContent = t("keep");
+  const extra = [];
+  if (pending.saved) {   // saved on the server: WhatsApp is only a copy
+    const note = document.createElement("p"); note.className = "center"; note.textContent = t("savedNote");
+    const again = document.createElement("button"); again.className = "secondary"; again.textContent = t("openAgain");
+    again.onclick = () => window.open(pending.url, "_blank");
+    extra.push(note, again);
+  }
   const ok = document.createElement("button"); ok.className = "send"; ok.textContent = t("done");
   ok.onclick = () => { pending = null; view = "order"; closeSheet(); render(); };
-  panel.append(h, no, p, ok);
+  panel.append(h, no, p, ...extra, ok);
 }
 
 $("lang").onclick = () => { lang = lang === "en" ? "ar" : "en"; store.set("lang", lang); render(); };
